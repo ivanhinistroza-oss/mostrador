@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mostrador</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0d6e5f">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mostrador">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./css/estilos.css">
+
+<header class="top">
+  <div class="wrap">
+    <button type="button" class="mobile-menu-button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileDrawer">☰</button>
+    <div class="mobile-title" id="mobileTitle">Inventario</div>
+    <div class="mobile-drawer" id="mobileDrawer">
+      <div class="drawer-head">
+        <div class="brand drawer-brand"><span>Mostrador</span><small id="bizName"></small></div>
+        <button type="button" class="drawer-close" aria-label="Cerrar menú">✕</button>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="inventario" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v12H3zM3 8l2-4h14l2 4M9 12h6"/></svg><span>Inventario</span></button>
+        <button role="tab" data-view="venta" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.5h11.6L21 8H6M9 19a1 1 0 1 0 0 .01M17 19a1 1 0 1 0 0 .01"/></svg><span>Nueva venta</span></button>
+        <button role="tab" data-view="notas" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21zM9 8h6M9 12h6M9 16h4"/></svg><span>Notas</span></button>
+        <button role="tab" data-view="caja" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v12H3zM3 12h18M7 8V4h10v4M8 16h.01M12 16h.01M16 16h.01"/></svg><span>Caja</span></button>
+        <button role="tab" data-view="cotizaciones" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7zM14 3v4h4M9 12h6M9 16h6M9 8h2"/></svg><span>Cotizaciones</span></button>
+        <button role="tab" data-view="ventas" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M2 20h20"/></svg><span>Ventas</span></button>
+        <button role="tab" data-view="reportes" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM15 2v5h5M13 11v7M10 15l3 3 3-3"/></svg><span>Reportes</span></button>
+        <button role="tab" data-view="resumen" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg><span>Resumen</span></button>
+        <button role="tab" data-view="usuarios" aria-selected="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Usuarios</span></button>
+        <button role="tab" data-view="config" aria-selected="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 2.9-.2-.1a1.8 1.8 0 0 0-1.9.1 1.8 1.8 0 0 0-.9 1.5v.2H9v-.2a1.8 1.8 0 0 0-1-1.5 1.8 1.8 0 0 0-1.9-.1l-.2.1-1.7-2.9.1-.1a1.7 1.7 0 0 0 .3-1.9 1.8 1.8 0 0 0-1.5-1H3v-3.4h.2a1.8 1.8 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1L6 4.7l.2.1a1.8 1.8 0 0 0 1.9-.1 1.8 1.8 0 0 0 .9-1.5V3h6.1v.2a1.8 1.8 0 0 0 1 1.5 1.8 1.8 0 0 0 1.9.1l.2-.1 1.7 2.9-.1.1a1.7 1.7 0 0 0-.3 1.9 1.8 1.8 0 0 0 1.5 1h.2V14h-.2a1.8 1.8 0 0 0-1.6 1z"/></svg><span>Configuración</span></button>
+      </nav>
+      <div id="userMenu" class="user-menu" hidden></div>
+      <button type="button" id="installApp" class="install-app" hidden>Instalar app</button>
+    </div>
+  </div>
+</header>
+<button type="button" class="drawer-backdrop" aria-label="Cerrar menú" tabindex="-1"></button>
+
+<main class="wrap">
+  <div id="banner" class="banner" hidden></div>
+  <section id="v-inventario"></section>
+  <section id="v-venta" hidden></section>
+  <section id="v-notas" hidden></section>
+  <section id="v-caja" hidden></section>
+  <section id="v-cotizaciones" hidden></section>
+  <section id="v-ventas" hidden></section>
+  <section id="v-reportes" hidden></section>
+  <section id="v-resumen" hidden></section>
+  <section id="v-usuarios" hidden></section>
+  <section id="v-config" hidden></section>
+</main>
+
+<dialog id="dlg">
+  <form id="pform" method="dialog" novalidate>
+    <h2 id="pformTitle">Nuevo producto</h2>
+    <div class="photo-field">
+      <span class="thumb lg" id="p-foto-prev"></span>
+      <div class="btns">
+        <button type="button" class="btn" id="p-foto-pick">Agregar foto</button>
+        <button type="button" class="btn ghost" id="p-foto-rm" hidden>Quitar</button>
+        <small>Opcional. Se guarda en tamaño pequeño para que la app siga rápida.</small>
+      </div>
+      <input type="file" id="p-foto-file" accept="image/*" hidden>
+    </div>
+    <label class="f"><span>Nombre del producto</span><input type="text" id="p-nombre" required autocomplete="off" placeholder="Ej. Arroz extra 5 kg" aria-describedby="p-nombre-aviso"></label>
+    <p id="p-nombre-aviso" class="warnline" role="alert" hidden></p>
+    <div id="p-similar" class="similar" hidden></div>
+    <div class="grid2">
+      <div class="cat-campo">
+        <label class="f"><span>Categoría</span><input type="text" id="p-categoria" autocomplete="off" placeholder="Toca una de abajo o escribe una nueva"></label>
+        <div class="cat-chips" id="p-cats" role="group" aria-label="Categorías que ya usas" hidden></div>
+      </div>
+      <label class="f"><span>Código / SKU</span><input type="text" id="p-codigo" autocomplete="off" placeholder="Opcional"></label>
+    </div>
+    <div class="cod-tools">
+      <button type="button" class="btn" id="p-cod-crear">Crear código</button>
+      <button type="button" class="btn" id="p-cod-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button>
+      <div class="cod-vista" id="p-cod-vista" hidden></div>
+    </div>
+    <div class="grid3">
+      <label class="f"><span>Precio de venta</span><input type="number" id="p-precio" min="0" step="0.01" inputmode="decimal"></label>
+      <label class="f"><span>Stock actual</span><input type="number" id="p-stock" step="1" inputmode="decimal"></label>
+      <label class="f"><span>Stock mínimo</span><input type="number" id="p-minimo" min="0" step="1" inputmode="decimal"></label>
+    </div>
+    <div class="grid2">
+      <label class="f"><span>Costo de compra (opcional)</span><input type="number" id="p-costo" min="0" step="0.01" inputmode="decimal" placeholder="Lo que te cuesta cada unidad"></label>
+      <p class="muted costo-margen" id="p-margen" aria-live="polite"></p>
+    </div>
+    <details id="p-variations"><summary id="p-var-sum">Tallas y colores (opcional)</summary>
+      <div class="var-pick">
+        <div>
+          <div class="var-pick-head"><span>Tallas</span><div class="var-sets" id="p-tallaset" role="group" aria-label="Tipo de talla"></div></div>
+          <div class="pick-chips" id="p-tallas" role="group" aria-label="Tallas"></div>
+          <div class="pick-other"><input type="text" id="p-talla-otra" placeholder="Otra talla" autocomplete="off"><button type="button" class="btn" data-pick-add="talla">Agregar</button></div>
+        </div>
+        <div>
+          <div class="var-pick-head"><span>Colores</span></div>
+          <div class="pick-chips" id="p-colores" role="group" aria-label="Colores"></div>
+          <div class="pick-other"><input type="text" id="p-color-otro" placeholder="Otro color" autocomplete="off"><button type="button" class="btn" data-pick-add="color">Agregar</button></div>
+        </div>
+        <div>
+          <div class="var-edit head" id="p-var-head" hidden><span>Combinación</span><span>Stock</span><span>Precio</span><span>Código</span><span></span></div>
+          <div class="var-rows" id="p-variants"></div>
+          <button type="button" class="btn ghost" id="p-addvariant" style="margin-top:8px">+ Otra combinación a mano</button>
+          <div class="var-cod-tools">
+            <button type="button" class="btn" id="p-var-crear">Crear los códigos que faltan</button>
+            <button type="button" class="btn" id="p-var-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear códigos</button>
+          </div>
+        </div>
+      </div>
+    </details>
+    <label class="check" id="p-web-row" hidden><input type="checkbox" id="p-web"> 🌐 Mostrar en la tienda web</label>
+    <label class="f"><span>Unidad</span>
+      <select id="p-unidad"><option>und</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>caja</option><option>paquete</option><option>docena</option><option>m</option></select>
+    </label>
+    <p id="p-err" class="warnline" hidden></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="p-del" hidden>Eliminar</button>
+      <div class="r">
+        <button type="button" class="btn ghost" id="p-cancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="p-save">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+<input type="file" id="backupFile" accept="application/json,.json" hidden>
+<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>
+<dialog id="scanDlg">
+  <div class="scan-body">
+    <h2>Escanear código</h2>
+    <div class="scan-video"><video id="scanVideo" playsinline muted></video></div>
+    <p id="scanMsg" aria-live="polite"></p>
+    <div class="actions"><div class="r"><button type="button" class="btn primary" id="scanClose">Listo</button></div></div>
+  </div>
+</dialog>
+<dialog id="labelDlg">
+  <div class="label-body">
+    <h2>Imprimir etiquetas</h2>
+    <input type="search" id="etqQ" placeholder="Buscar por nombre, categoría o código" aria-label="Buscar producto" autocomplete="off">
+    <div class="etq-solo" id="etqSolo" hidden></div>
+    <div class="etq-opts">
+      <select id="etqTam" aria-label="Tamaño de la etiqueta"></select>
+      <label class="check"><input type="checkbox" id="etqPrecio"> Mostrar precio</label>
+    </div>
+    <div class="etq-todo">
+      <button type="button" class="btn ghost" data-etq-todo="uno">Una de cada</button>
+      <button type="button" class="btn ghost" data-etq-todo="stock">Según el stock</button>
+      <button type="button" class="btn ghost" data-etq-todo="cero">Poner en 0</button>
+    </div>
+    <div class="etq-filas" id="etqFilas"></div>
+    <p class="warnline" id="etqMsg" hidden></p>
+    <div class="actions">
+      <span class="muted" id="etqTotal"></span>
+      <div class="r">
+        <button type="button" class="btn ghost" id="etqCerrar">Cerrar</button>
+        <button type="button" class="btn primary" id="etqPrint">Imprimir</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+<dialog id="backupDialog">
+  <form method="dialog">
+    <h2>Importar copia</h2>
+    <p>¿Cómo quieres aplicar los datos de la copia?</p>
+    <div class="actions"><button class="btn" value="cancel">Cancelar</button><button class="btn" value="merge">Combinar</button><button class="btn primary" value="replace">Reemplazar todo</button></div>
+  </form>
+</dialog>
+
+<script src="./js/base.js"></script>
+<script src="./js/inventario.js"></script>
+<script src="./js/producto.js"></script>
+<script src="./js/codigos.js"></script>
+<script src="./js/venta.js"></script>
+<script src="./js/impresion.js"></script>
+<script src="./js/notas.js"></script>
+<script src="./js/cotizaciones.js"></script>
+<script src="./js/excel.js"></script>
+<script src="./js/reportes.js"></script>
+<script src="./js/usuarios.js"></script>
+<script src="./js/resumen.js"></script>
+<script src="./js/ventas.js"></script>
+<script src="./js/caja.js"></script>
+<script src="./js/navegacion.js"></script>
+<script src="./js/firebase.js"></script>
+<script src="./js/web.js"></script>
+<script src="./js/cuentas.js"></script>
+<script src="./js/arranque.js"></script>
