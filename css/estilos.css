@@ -599,8 +599,9 @@ body{height:100dvh;overflow:hidden}
 .rs-stat::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--rs-k)}
 .rs-stat-icon{flex:none;width:40px;height:40px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--rs-k) 14%,var(--surface));color:var(--rs-k)}
 .rs-stat-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.rs-stat-body{display:flex;flex-direction:column;gap:3px;min-width:0}
-.rs-stat .summary-stat-value{font-size:clamp(17px,1.7vw,25px);white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+.rs-stat-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;align-self:stretch;container-type:inline-size}
+/* la cifra se achica según el ancho de la tarjeta, para que un monto largo quepa en una línea */
+.rs-stat .summary-stat-value{font-size:clamp(13px,10.5cqi,25px);white-space:nowrap;line-height:1.2}
 .rs-a{--rs-k:var(--rs-c1)} .rs-b{--rs-k:var(--rs-c2)} .rs-c{--rs-k:var(--rs-c4)} .rs-d{--rs-k:var(--warn)} .rs-e{--rs-k:var(--rs-ok)}
 .rs-split-out{color:var(--bad);font-weight:600}
 
@@ -687,3 +688,67 @@ body{height:100dvh;overflow:hidden}
   .rs-alert .chip{grid-column:3/4;grid-row:1}
   .rs-donut-chart{width:150px;height:150px}
 }
+
+
+/* ---- Ventas con diseño nuevo (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ---- */
+.rs-f{--rs-k:var(--rs-c3)}
+.rv .dash-card,.rv .summary-stat,.rv .summary-table-wrap{border-radius:14px;box-shadow:var(--rs-shadow)}
+.rv-sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+.rv-head{display:flex;flex-direction:column}
+.rv-note{margin:-6px 0 12px;font-size:12.5px;color:var(--muted)}
+
+/* Botones de período y comparación: pastillas */
+.rv .seg{border-radius:999px;padding:3px;gap:2px;background:var(--surface-2);border-color:transparent}
+.rv .seg button{border-radius:999px;padding:7px 14px}
+.rv .seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgb(0 0 0 / .12)}
+.rv .sales-compare .seg button{padding:5px 11px}
+.rv .seg button{white-space:nowrap}
+.rv .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
+@media(max-width:700px){.rv .seg button,.rv .sales-compare .seg button{padding:6px 9px}}
+.rv .sales-top-toggle{border-radius:999px;padding:2px;background:var(--surface-2);border-color:transparent}
+.rv .sales-top-toggle button{border-radius:999px;padding:4px 10px;font-weight:600}
+.rv .sales-top-toggle button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+
+/* Cifras: el cambio se ve como pastilla */
+.rv .rs-stat .summary-stat-context{line-height:1.6}
+.rv .delta{display:inline-block;padding:0 7px;border-radius:999px;font-size:12px}
+.rv .delta.up{background:color-mix(in srgb,var(--up) 13%,var(--surface))}
+.rv .delta.down{background:var(--bad-soft)}
+
+/* Gráfico principal */
+.rv .sales-plot{background:repeating-linear-gradient(to top,transparent 0,transparent calc(50% - .5px),color-mix(in srgb,var(--line) 60%,transparent) calc(50% - .5px),color-mix(in srgb,var(--line) 60%,transparent) 50%,transparent 50%,transparent calc(100% - 1px),color-mix(in srgb,var(--line) 60%,transparent) calc(100% - 1px),color-mix(in srgb,var(--line) 60%,transparent) 100%)}
+.rv .sales-bar{background:linear-gradient(to top,var(--c1),color-mix(in srgb,var(--c1) 70%,#fff));border-radius:6px 6px 2px 2px}
+.rv .sales-bar.prev{background:color-mix(in srgb,var(--c-prev) 75%,var(--surface));border-radius:6px 6px 2px 2px}
+.rv .sales-bar.zero{background:var(--line);border-radius:2px}
+.rv .sales-bar-col{border-radius:8px 8px 0 0}
+.rv .sales-bar-col:hover .sales-bar:not(.prev):not(.zero){filter:brightness(1.12)}
+.rv .sales-trend{border-radius:10px;border-left:3px solid var(--c1);background:color-mix(in srgb,var(--c1) 8%,var(--surface))}
+.rv .sales-legend i:not(.line){border-radius:4px}
+
+/* Días de la semana */
+.rv .wk-col i{background:linear-gradient(to top,var(--c1),color-mix(in srgb,var(--c1) 70%,#fff));border-radius:6px 6px 2px 2px}
+.rv .wk-col i.prev{background:color-mix(in srgb,var(--c-prev) 75%,var(--surface))}
+.rv .wk-col i.zero{background:var(--line);border-radius:2px}
+.rv .wk-col{border-radius:8px 8px 0 0}
+
+/* Medios de pago */
+.rv .pay-stack{height:14px;gap:3px;border-radius:999px;overflow:hidden}
+.rv .pay-stack span{border-radius:0!important}
+.rv .pay-table .sw{border-radius:4px}
+.rv .pay-table th,.rv .pay-table td{padding:8px 4px}
+
+/* Productos más vendidos */
+.rv .rs-bar{background:linear-gradient(90deg,var(--c1),color-mix(in srgb,var(--c1) 60%,var(--rs-c1)))}
+.rv .rs-bar-row:nth-child(-n+3) .rs-rank{background:color-mix(in srgb,var(--c1) 15%,var(--surface));color:var(--c1)}
+.rv .rs-bar-row:hover .rs-bar-name{color:var(--c1)}
+.rv .rv-detail .rs-bar{background:linear-gradient(90deg,var(--c4),color-mix(in srgb,var(--c4) 60%,var(--c2)))}
+.rv .rv-detail .rs-bar-row:nth-child(-n+3) .rs-rank{background:color-mix(in srgb,var(--c4) 18%,var(--surface));color:var(--warn)}
+
+/* Tabla */
+.rv .summary-table thead th{background:var(--surface-2)}
+.rv .summary-table td{vertical-align:middle}
+.rv .sales-table td{white-space:nowrap}
+.rv .sales-table .sales-summary{max-width:190px}
+.rv .sales-table tbody tr:hover{background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+.rv .sales-table tfoot td{border-top:2px solid var(--line);background:var(--surface-2)}
+.rv .sales-table .chip:not(.out){background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}

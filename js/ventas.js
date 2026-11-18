@@ -325,7 +325,7 @@ function renderVentas() {
     : fecha(cmp.start) + " al " + fecha(cmp.end) + ", hasta la misma hora";
   const todo = salesPeriod === "all";
   const compara = `<div class="sales-compare"><span>Comparar con</span><div class="seg">${salesCompares.map(([k, l]) => `<button data-sales-compare="${k}" aria-pressed="${todo ? k === "none" : salesCompare === k}"${todo && k !== "none" ? " disabled" : ""}>${l}</button>`).join("")}</div><span class="muted">${todo ? "Elige un período para comparar." : esc(rango)}</span></div>`;
-  el.innerHTML = `<div class="toolbar"><h1 style="margin-right:auto">Ventas</h1><div class="seg">${salesPeriods.map(([key, label]) => `<button data-sales-period="${key}" aria-pressed="${salesPeriod === key}">${label}</button>`).join("")}</div></div>${compara}${notasAviso()}${salesKpis(notes, prevNotes, cmp)}${renderSalesChart(notes, prevNotes, cmp)}<div class="dash-grid sales-pair">${renderWeekdays(notes, prevNotes, cmp)}${renderPagos(notes, prevNotes, cmp)}</div>${renderTopProducts(notes, prevNotes, cmp)}${renderSalesTable(notes)}`;
+  el.innerHTML = `<div class="toolbar"><div class="rv-head" style="margin-right:auto"><h1>Ventas</h1><p class="rv-sub">Cuánto vendiste y cómo vas</p></div><div class="seg">${salesPeriods.map(([key, label]) => `<button data-sales-period="${key}" aria-pressed="${salesPeriod === key}">${label}</button>`).join("")}</div></div>${compara}${notasAviso()}${salesKpis(notes, prevNotes, cmp)}${renderSalesChart(notes, prevNotes, cmp)}<div class="dash-grid sales-pair">${renderWeekdays(notes, prevNotes, cmp)}${renderPagos(notes, prevNotes, cmp)}</div>${renderTopProducts(notes, prevNotes, cmp)}${renderSalesTable(notes)}`;
   if (hadSearchFocus) { const input = $("#salesSearch"); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 // detalle al pasar el mouse o tocar una barra: un solo cuadro flotante para toda la vista
@@ -400,3 +400,44 @@ document.addEventListener("keydown", e => {
   }
 });
 
+// ---- Ventas con diseño nuevo (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ----
+// Usa rsIcon de extra/resumen.js (resumen.js se carga antes). Reemplaza salesKpis y renderTopProducts con
+// los mismos datos, botones (data-sales-mode) y cuadros de detalle (data-tip); los cálculos no cambian.
+$("#v-ventas").classList.add("rv");
+Object.assign(RS_ICON, {
+  recibo: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  promedio: '<path d="M4 19h16"/><path d="M5 15l4-4 4 3 6-7"/><path d="M15 7h4v4"/>',
+});
+
+function salesKpis(notes, prevNotes, cmp) {
+  const cur = salesMetrics(notes), prior = Array.isArray(prevNotes) ? salesMetrics(prevNotes) : null;
+  const fmt = { total: money, count: qty, average: money, units: qty };
+  const context = key => {
+    if (!cmp) return salesPeriod === "all" ? "todo el historial" : "sin comparar";
+    if (prevNotes === "loading") return "cargando " + cmp.corto.toLowerCase() + "…";
+    if (prevNotes === "error") return "sin conexión para comparar";
+    if (!prior[key]) return `${cmp.corto}: sin ventas`;
+    return `${deltaHtml(cur[key], prior[key])} · ${cmp.corto}: ${fmt[key](prior[key])}`;
+  };
+  const data = [["rs-a", "plata", "Total vendido", money(cur.total), "total"], ["rs-b", "recibo", "Ventas", qty(cur.count), "count"], ["rs-c", "promedio", "Ticket promedio", money(cur.average), "average"], ["rs-f", "caja", "Unidades vendidas", qty(cur.units), "units"]];
+  return `<div class="summary-stats">${data.map(x => `<div class="summary-stat rs-stat ${x[0]}"><span class="rs-stat-icon">${rsIcon(x[1])}</span><div class="rs-stat-body"><span class="summary-stat-label">${x[2]}</span><b class="summary-stat-value">${x[3]}</b><span class="summary-stat-context">${context(x[4])}</span></div></div>`).join("")}</div>`;
+}
+
+function renderTopProducts(notes, prevNotes, cmp) {
+  const data = salesTopData(notes), prior = cmp && Array.isArray(prevNotes) ? salesTopData(prevNotes).products : null;
+  const empty = `<div class="sales-empty">Aún no hay ventas en este período. <button class="btn primary" data-view="venta">Nueva venta</button></div>`;
+  const tope = Math.max(1, ...data.top.map(y => y.value)), topeDet = Math.max(1, ...data.detail.map(y => y.value));
+  const fila = (i, label, val, w, tip) => `<div class="rs-bar-row" data-tip="${esc(tip)}">
+      <span class="rs-bar-label"><span class="rs-rank">${i + 1}</span><span class="rs-bar-name">${esc(label)}</span></span>
+      <span class="rs-bar-val num">${val}</span>
+      <span class="rs-bar-track"><span class="rs-bar" style="width:${(w * 100).toFixed(2)}%"></span></span>
+    </div>`;
+  const productRows = data.top.map((x, i) => {
+    const p = prior && prior.get(x.key), pv = p ? (salesTopMode === "units" ? p.units : p.amount) : 0;
+    const tip = x.label + "\n" + qty(x.units) + " und · " + money(x.amount) + (prior ? "\n" + cmp.corto + ": " + (p ? qty(p.units) + " und · " + money(p.amount) : "sin ventas") : "");
+    const val = salesTopMode === "units" ? `${qty(x.units)} und <span class="muted">· ${money(x.amount)}</span>` : `${money(x.amount)} <span class="muted">· ${qty(x.units)} und</span>`;
+    return fila(i, x.label, val + (prior ? " " + deltaHtml(x.value, pv) : ""), x.value / tope, tip);
+  }).join("");
+  const detailRows = data.detail.map((x, i) => fila(i, x.label, `${qty(x.value)} und`, x.value / topeDet, x.label + "\n" + qty(x.value) + " und")).join("");
+  return `<div class="dash-grid"><section class="dash-card"><div class="dash-heading sales-head"><h2>Productos más vendidos</h2><span class="sales-top-toggle"><button data-sales-mode="units" aria-pressed="${salesTopMode === "units"}">Unidades</button><button data-sales-mode="amount" aria-pressed="${salesTopMode === "amount"}">Ingresos</button></span></div>${prior ? `<p class="rv-note">Cambio comparado con ${esc(cmp.corto.toLowerCase())}</p>` : ""}${productRows ? `<div class="rs-bars">${productRows}</div>` : empty}</section><section class="dash-card"><div class="dash-heading"><h2>Tallas y colores más vendidos</h2><span class="dash-subtitle">${data.variants ? "por unidades" : "por categoría · unidades"}</span></div>${detailRows ? `<div class="rs-bars rv-detail">${detailRows}</div>` : empty}</section></div>`;
+}
