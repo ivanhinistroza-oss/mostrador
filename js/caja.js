@@ -72,12 +72,12 @@ function renderCaja() {
         ${navigator.onLine === false ? `<p class="banner">Sin conexión: este cierre solo cuenta las ventas guardadas en este equipo.</p>` : ""}
         ${deOtroDia ? `<p class="banner">Esta caja sigue abierta desde otro día. Ciérrala para empezar la jornada con el monto correcto.</p>` : ""}
         <div class="stats caja-stats">
-          <div class="stat"><b class="num">${money(abierta.montoInicial)}</b><span>Monto inicial</span></div>
-          <div class="stat"><b>${fmtDate(abierta.abiertaEn)}</b><span>Abrió ${esc(abierta.abiertaPorNombre || "")}</span></div>
-          <div class="stat"><b>${res.ventasCount}</b><span>Ventas desde la apertura</span></div>
+          <div class="stat rc-stat rs-a"><span class="rs-stat-icon">${rsIcon("plata")}</span><span class="rc-stat-body"><span>Monto inicial</span><b class="num">${money(abierta.montoInicial)}</b></span></div>
+          <div class="stat rc-stat rs-b"><span class="rs-stat-icon">${rsIcon("reloj")}</span><span class="rc-stat-body"><span>Abrió ${esc(abierta.abiertaPorNombre || "")}</span><b>${fmtDate(abierta.abiertaEn)}</b></span></div>
+          <div class="stat rc-stat rs-c"><span class="rs-stat-icon">${rsIcon("recibo")}</span><span class="rc-stat-body"><span>Ventas desde la apertura</span><b class="num">${res.ventasCount}</b></span></div>
         </div>
         ${ver ? `<div class="caja-lines">
-          ${res.pagos.map(d => `<div class="tr"><span>${esc(d.label)} (${d.count})</span><span class="num">${money(d.total)}</span></div>`).join("") || `<p class="muted">Aún no hay ventas en esta caja.</p>`}
+          ${res.pagos.map(d => `<div class="tr"><span><i class="sw" style="background:${pagoColor(d.label)}"></i>${esc(d.label)} <span class="muted">(${d.count})</span></span><span class="num">${money(d.total)}</span></div>`).join("") || `<p class="muted">Aún no hay ventas en esta caja.</p>`}
           <div class="tr caja-total"><span>Efectivo esperado en caja</span><span class="num">${money(res.esperado)}</span></div>
         </div>` : `<p class="muted">Cuenta el efectivo de la caja y escribe el total. El resultado aparece al cerrar.</p>`}
         <label class="f"><span>Efectivo contado</span><input type="text" inputmode="decimal" id="c-contado" value="${esc(cajaForm.contado)}" placeholder="0.00" autocomplete="off"></label>
@@ -86,13 +86,13 @@ function renderCaja() {
         <div class="caja-actions"><button class="btn primary" id="c-cerrar">Cerrar caja</button></div>
       </div>` : `
       <div class="panel">
-        <h2>Abrir caja</h2>
+        <span class="rc-big-icon">${rsIcon("candado")}</span><h2>Abrir caja</h2>
         <p class="muted">Cuenta el efectivo con el que empiezas, por ejemplo el sencillo para dar vuelto.</p>
         <label class="f"><span>Monto inicial en efectivo</span><input type="text" inputmode="decimal" id="c-inicial" value="${esc(cajaForm.inicial)}" placeholder="0.00" autocomplete="off"></label>
         <div class="caja-actions"><button class="btn primary" id="c-abrir">Abrir caja</button></div>
       </div>`;
   el.innerHTML = `
-    <div class="toolbar"><h1 style="margin-right:auto">Caja</h1><span class="chip ${abierta ? "ex" : ""}">${abierta ? "Abierta" : "Cerrada"}</span></div>
+    <div class="toolbar"><div class="rv-head" style="margin-right:auto"><h1>Caja</h1><p class="rv-sub">Abre la caja al empezar y ciérrala contando el efectivo</p></div><span class="rc-estado ${abierta ? "abierta" : ""}"><i></i>${abierta ? "Caja abierta" : "Caja cerrada"}</span></div>
     ${cajasBlocked ? `<p class="banner">Para guardar la caja falta actualizar las reglas de Firebase: copia el archivo <b>firestore.rules</b> en Firestore → Reglas → Publicar.</p>` : ""}
     ${notasAviso()}
     <div class="caja-grid">
@@ -169,4 +169,18 @@ $("#v-caja").addEventListener("click", async e => {
   } catch (err) { t.disabled = false; toast(failMsg(err)); }
 });
 
-
+// ---- Caja con diseño nuevo (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ----
+// preparar.mjs cambia el marcado de renderCaja (título, cifras, medios de pago). Aquí: la clase de la vista,
+// íconos y el resultado del conteo con color (cuadra, faltan, sobran). La lógica de abrir y cerrar no cambia.
+$("#v-caja").classList.add("rc");
+Object.assign(RS_ICON, {
+  reloj: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  candado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+});
+function cajaDifActualizar(res) {
+  const out = $("#c-dif"); if (!out || !res) return;
+  const contado = cajaMonto(cajaForm.contado);
+  const d = contado === null ? null : round2(contado - res.esperado);
+  out.textContent = d === null ? "" : cajaDifTxt(d);
+  out.className = "rc-dif" + (d === null ? "" : d === 0 ? " cuadra" : d < 0 ? " falta" : " sobra");
+}

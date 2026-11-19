@@ -752,3 +752,64 @@ body{height:100dvh;overflow:hidden}
 .rv .sales-table tbody tr:hover{background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
 .rv .sales-table tfoot td{border-top:2px solid var(--line);background:var(--surface-2)}
 .rv .sales-table .chip:not(.out){background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}
+
+
+/* ---- Caja con diseño nuevo (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ---- */
+.rc .panel,.rc .summary-table-wrap{border-radius:14px;box-shadow:var(--rs-shadow)}
+.rc .panel{padding:20px;gap:16px}
+.rc .caja-grid h2{font-size:18px}
+.rc .caja-hist{font-size:18px}
+
+/* Estado de la caja */
+.rc-estado{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-weight:600;font-size:13.5px;background:var(--surface-2);color:var(--muted)}
+.rc-estado i{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.rc-estado.abierta{background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}
+.rc-estado.abierta i{background:var(--rs-ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--rs-ok) 25%,transparent);animation:rc-latido 2s ease-in-out infinite}
+@keyframes rc-latido{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--rs-ok) 0%,transparent)}}
+@media (prefers-reduced-motion:reduce){.rc-estado.abierta i{animation:none}}
+
+/* Cifras de la caja abierta */
+.rc .caja-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border:0;padding:0}
+.rc-stat{flex-direction:row!important;align-items:flex-start;gap:8px;padding:12px 10px;border-radius:12px;background:var(--surface-2);min-width:0}
+.rc-stat .rs-stat-icon{width:32px;height:32px;border-radius:9px}
+.rc-stat .rs-stat-icon svg{width:18px;height:18px}
+.rc-stat-body{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;container-type:inline-size}
+.rc-stat-body > span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;line-height:1.3;overflow-wrap:anywhere}
+.rc-stat-body b{font-family:var(--f-mono);font-size:clamp(11px,10.5cqi,16px);font-variant-numeric:tabular-nums;line-height:1.3}
+.rc-stat-body b.num{white-space:nowrap}
+
+/* Ventas por medio de pago y efectivo esperado */
+.rc .caja-lines{gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rc .caja-lines .tr{padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.rc .caja-lines .tr:last-child{border-bottom:0}
+.rc .caja-lines .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.rc .caja-lines p{padding:12px 14px}
+.rc .caja-total{border-top:0;padding:14px!important;background:color-mix(in srgb,var(--accent) 10%,var(--surface));font-size:15px}
+.rc .caja-total .num{font-size:20px;color:var(--accent)}
+
+/* Conteo del efectivo */
+.rc #c-contado,.rc #c-inicial{font:600 22px var(--f-mono);padding:12px 14px;border-radius:12px;border-width:2px}
+.rc #c-contado:focus,.rc #c-inicial:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.rc-dif{margin:-4px 0 0;padding:10px 14px;border-radius:12px;font-weight:600;font-size:15px}
+.rc-dif:empty{display:none}
+.rc-dif.cuadra{background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}
+.rc-dif.falta{background:var(--bad-soft);color:var(--bad)}
+.rc-dif.sobra{background:var(--warn-soft);color:var(--warn)}
+.rc-dif.cuadra::before{content:"✓ "}
+.rc-dif.falta::before,.rc-dif.sobra::before{content:"! "}
+.rc textarea{border-radius:12px}
+.rc .caja-actions .btn{padding:11px 22px;border-radius:999px;font-size:15px}
+
+/* Abrir caja */
+.rc-big-icon{width:52px;height:52px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent)}
+.rc-big-icon svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Último cierre e historial */
+.rc .caja-last{background:var(--surface-2);border-radius:14px;padding:18px 16px 22px}
+.rc .caja-tabla thead th{background:var(--surface-2);font-size:12px;color:var(--muted)}
+.rc .caja-tabla td{vertical-align:middle}
+.rc .caja-tabla tbody tr:hover{background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+.rc .caja-tabla .chip.ex{background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}
+.rc .caja-tabla .btn{padding:5px 12px;border-radius:999px;font-size:13px}
+
+@media(max-width:700px){.rc .caja-stats{grid-template-columns:minmax(0,1fr)}}
