@@ -334,6 +334,7 @@ function renderConfig() {
           ${check("mostrarRedes", "Mostrar redes sociales en el ticket")}
           ${check("montoEnLetras", "Mostrar monto en letras")}
         </div>
+        ${factCard(s)}
         ${webConfigCard()}
         ${!db || fbMode ? `
         <div class="config-card">
@@ -374,7 +375,7 @@ document.addEventListener("click", e => {
     if (!exigir("ajustes.editar", "guardar la configuración") || !configDraft) return;
     const values = {};
     for (const [k, v] of Object.entries(configDraft)) values[k] = typeof v === "string" ? v.trim() : v;
-    if (values.ruc && !/^\d{11}$/.test(values.ruc)) return toast("El RUC debe tener 11 dígitos.");
+    { const aviso = factValidar(values); if (aviso) return toast(aviso); }
     // se parte de los ajustes actuales para no borrar el logo ni otros datos
     const s = { ...S.settings, ...values, negocio: values.negocio || "Mi negocio", moneda: values.moneda || "S/" };
     putSettings(s).then(() => {

@@ -54,6 +54,7 @@ function openProduct(id) {
   $("#p-costo").value = editing && tieneCosto(editing) ? n2(editing.costo) : "";
   margenVista();
   $("#p-unidad").value = editing ? editing.unidad || "und" : "und";
+  $("#p-igv").value = editing ? editing.igv || "gravado" : "gravado";
   openVariantEditor(editing);
   editFoto = editing && fotoOk(editing) ? editing.foto : "";
   showFoto();
@@ -346,7 +347,7 @@ $("#pform").addEventListener("submit", async e => {
     id: editing ? editing.id : uid(),
     nombre, categoria: categoriaCanonica($("#p-categoria").value), codigo: $("#p-codigo").value.trim(),
     precio: n2($("#p-precio").value), stock: n2($("#p-stock").value), minimo: n2($("#p-minimo").value),
-    unidad: $("#p-unidad").value, actualizado: new Date().toISOString(),
+    unidad: $("#p-unidad").value, igv: $("#p-igv").value, actualizado: new Date().toISOString(),
   };
   const variants=[...$("#p-variants").querySelectorAll("[data-variant-row]")].map(r=>{const get=k=>r.querySelector(`[data-vfield="${k}"]`).value;const v={id:r.dataset.variantId,talla:get("talla").trim(),color:get("color").trim(),stock:n2(get("stock"))};if(get("codigo").trim())v.codigo=get("codigo").trim();if(get("precio")!=="")v.precio=n2(get("precio"));return v;}).filter(v=>v.talla||v.color);
   if(variants.length){p.variantes=variants;p.stock=variants.reduce((a,v)=>a+n2(v.stock),0);}else delete p.variantes;

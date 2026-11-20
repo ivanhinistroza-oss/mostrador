@@ -34,7 +34,7 @@ function renderVenta() {
       <div class="panel">
         <div class="grid2">
           <label class="f"><span>Cliente</span><input type="text" id="d-cliente" value="${esc(draft.cliente)}" placeholder="Público en general" autocomplete="off"></label>
-          <label class="f"><span>DNI / RUC / documento</span><input type="text" id="d-doc" value="${esc(draft.doc)}" placeholder="Opcional" autocomplete="off"></label>
+          <label class="f"><span>DNI / RUC / documento</span><input type="text" id="d-doc" value="${esc(draft.doc)}" placeholder="Opcional" autocomplete="off">${docHint(draft.doc)}</label>
         </div>
         <div class="picker">
           <div class="scan-row"><label class="f"><span>Agregar producto</span><input type="search" id="d-pick" value="${esc(pickQ)}" placeholder="${S.products.length ? "Escribe nombre o código" : "Primero agrega productos en Inventario"}" autocomplete="off"></label><button type="button" class="btn" id="d-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button></div>
@@ -160,7 +160,7 @@ async function emitNote(btn) {
   const fromQuote = draft.cotizacionId;
   const note = {
     id: uid(), folio: nextFolio(), fecha: new Date().toISOString(),
-    cliente: draft.cliente.trim(), doc: draft.doc.trim(), obs: draft.obs.trim(), pago: draft.pago || PAGO_INICIAL,
+    cliente: draft.cliente.trim(), doc: draft.doc.trim(), docTipo: docTipo(draft.doc), obs: draft.obs.trim(), pago: draft.pago || PAGO_INICIAL,
     items, total: Math.round(items.reduce((a, i) => a + i.cant * i.precio, 0) * 100) / 100, estado: "emitida",
   };
   try {

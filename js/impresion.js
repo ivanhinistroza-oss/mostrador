@@ -57,7 +57,7 @@ function ticketHtml(n, preview, settings = S.settings) {
     <div class="receipt-box c"><b>NOTA DE VENTA</b><br><b>${folioTxt(n.folio)}</b>${preview ? " (borrador)" : ""}</div>
     <div>Fecha y hora: ${esc(fmtDate(n.fecha))}</div>
     <div>Cliente: ${esc(n.cliente || "Público en general")}</div>
-    ${n.doc ? `<div>Doc.: ${esc(n.doc)}</div>` : ""}
+    ${n.doc ? `<div>${esc(docTxt(n))}</div>` : ""}
     ${n.vendedorNombre ? `<div>Atendió: ${esc(n.vendedorNombre)}</div>` : ""}
     <hr>
     ${narrow
@@ -88,7 +88,7 @@ function ticketText(n) {
   if (s.correo) L.push(ctr(s.correo));
   L.push(hr, ctr("NOTA DE VENTA"), ctr(folioTxt(n.folio)), hr,
     "Fecha y hora: " + fmtDate(n.fecha), "Cliente: " + (n.cliente || "Público en general"));
-  if (n.doc) L.push("Doc.: " + n.doc);
+  if (n.doc) L.push(docTxt(n));
   if (n.vendedorNombre) L.push("Atendió: " + n.vendedorNombre);
   L.push(hr, pad("DESCRIPCIÓN", "IMPORTE"), hr);
   (n.items || []).forEach(i => {

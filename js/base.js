@@ -369,3 +369,76 @@ function failMsg(e) {
   return "No se pudo guardar. Revisa tu conexión e inténtalo otra vez.";
 }
 
+
+
+// ---- Datos para facturación electrónica (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ----
+// Todavía NO se emite nada ni se conecta un proveedor: solo se guardan los datos que harán falta para boletas
+// y facturas de SUNAT (Perú). Va al final de base.js, así queda disponible para Venta, Configuración y Producto.
+
+// RUC: 11 dígitos, empieza con 10, 15, 16, 17 o 20, y el último dígito es el verificador (módulo 11 de SUNAT).
+function rucValido(r) {
+  r = String(r || "").trim();
+  if (!/^(10|15|16|17|20)\d{9}$/.test(r)) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = pesos.reduce((a, p, i) => a + p * Number(r[i]), 0);
+  const dv = (11 - (suma % 11)) % 10;
+  return dv === Number(r[10]);
+}
+// Tipo del documento del cliente según lo escrito: "DNI", "RUC" (válido), "RUC?" (11 dígitos con error) u "Otro".
+function docTipo(doc) {
+  const d = String(doc || "").trim();
+  if (!d) return "";
+  if (/^\d{8}$/.test(d)) return "DNI";
+  if (/^\d{11}$/.test(d)) return rucValido(d) ? "RUC" : "RUC?";
+  return "Otro";
+}
+// Ayuda debajo de la casilla del documento en Nueva venta.
+function docHint(doc) {
+  const t = docTipo(doc);
+  if (!t) return `<small class="doc-hint">Para factura se necesitará el RUC del cliente.</small>`;
+  if (t === "DNI") return `<small class="doc-hint ok">✓ DNI · sirve para boleta</small>`;
+  if (t === "RUC") return `<small class="doc-hint ok">✓ RUC válido · sirve para factura</small>`;
+  if (t === "RUC?") return `<small class="doc-hint bad">Este RUC tiene un error: revisa los números.</small>`;
+  return `<small class="doc-hint">Otro documento (carné de extranjería, pasaporte…)</small>`;
+}
+// Documento en el ticket: "DNI: …", "RUC: …" o "Doc.: …".
+function docTxt(n) {
+  const d = String(n.doc || "").trim();
+  if (!d) return "";
+  const t = n.docTipo || docTipo(d);
+  return (t === "DNI" || t === "RUC" ? t : "Doc.") + ": " + d;
+}
+
+// Afectación del IGV de cada producto (catálogo 07 de SUNAT: 10 gravado, 20 exonerado, 30 inafecto).
+const AFECTACION_IGV = [["gravado", "Gravado (con IGV)", "10"], ["exonerado", "Exonerado", "20"], ["inafecto", "Inafecto", "30"]];
+// Unidades del Mostrador y su código de SUNAT (catálogo 03), para cuando se emitan comprobantes.
+const UNIDAD_SUNAT = { und: "NIU", kg: "KGM", g: "GRM", L: "LTR", ml: "MLT", caja: "BX", paquete: "PK", docena: "DZN", m: "MTR" };
+
+// Tarjeta "Facturación electrónica" en Configuración (el RUC y la razón social están en la tarjeta Negocio).
+function factCard(s) {
+  const campo = (label, key, ph, attrs = "") => `<label class="f"><span>${label}</span><input type="text" data-setting="${key}" value="${esc(s[key] || "")}" placeholder="${esc(ph)}" ${attrs}></label>`;
+  const listo = rucValido(s.ruc) && String(s.razonSocial || "").trim() && String(s.direccion || "").trim();
+  return `<div class="config-card fact-card">
+          <h2>Facturación electrónica <span class="chip">Próximamente</span></h2>
+          <p class="muted fact-nota">Todavía no se emiten boletas ni facturas. Estos datos quedan listos para cuando se conecte un proveedor de SUNAT.</p>
+          <div class="fact-check ${listo ? "ok" : ""}">${listo ? "✓ RUC, razón social y dirección completos." : "Para emitir hará falta: RUC válido, razón social y dirección (en las tarjetas Negocio y Dirección)."}</div>
+          <div class="row2">
+            ${campo("Serie de boletas", "serieBoleta", "B001", 'maxlength="4" style="text-transform:uppercase"')}
+            ${campo("Serie de facturas", "serieFactura", "F001", 'maxlength="4" style="text-transform:uppercase"')}
+          </div>
+          <div class="row2">
+            ${campo("IGV (%)", "igvTasa", "18", 'inputmode="decimal" maxlength="5"')}
+            <span></span>
+          </div>
+          <label class="check"><input type="checkbox" data-setting="preciosConIgv" ${s.preciosConIgv !== false ? "checked" : ""}> Los precios de mis productos ya incluyen IGV</label>
+        </div>`;
+}
+// Revisa los datos antes de guardar la configuración; devuelve el aviso o "" si todo está bien.
+function factValidar(v) {
+  if (v.ruc && !/^\d{11}$/.test(v.ruc)) return "El RUC debe tener 11 dígitos.";
+  if (v.ruc && !rucValido(v.ruc)) return "El RUC tiene un error: revisa los números.";
+  if (v.serieBoleta) { v.serieBoleta = v.serieBoleta.toUpperCase(); if (!/^B[A-Z0-9]{3}$/.test(v.serieBoleta)) return "La serie de boletas es una B y 3 letras o números, por ejemplo B001."; }
+  if (v.serieFactura) { v.serieFactura = v.serieFactura.toUpperCase(); if (!/^F[A-Z0-9]{3}$/.test(v.serieFactura)) return "La serie de facturas es una F y 3 letras o números, por ejemplo F001."; }
+  if (v.igvTasa) { const t = Number(String(v.igvTasa).replace(",", ".")); if (!(t >= 0 && t <= 30)) return "El IGV debe ser un porcentaje entre 0 y 30."; v.igvTasa = String(t); }
+  return "";
+}

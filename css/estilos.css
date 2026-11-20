@@ -813,3 +813,13 @@ body{height:100dvh;overflow:hidden}
 .rc .caja-tabla .btn{padding:5px 12px;border-radius:999px;font-size:13px}
 
 @media(max-width:700px){.rc .caja-stats{grid-template-columns:minmax(0,1fr)}}
+
+
+/* ---- Datos para facturación electrónica (solo en el Mostrador con Cimiento; lo agrega preparar.mjs) ---- */
+.doc-hint{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--muted)}
+.doc-hint.ok{color:var(--rs-ok)}
+.doc-hint.bad{color:var(--bad)}
+.fact-card h2 .chip{vertical-align:middle;margin-left:6px}
+.fact-nota{margin:0;font-size:13px}
+.fact-check{padding:9px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600}
+.fact-check.ok{background:color-mix(in srgb,var(--rs-ok) 14%,var(--surface));color:var(--rs-ok)}
