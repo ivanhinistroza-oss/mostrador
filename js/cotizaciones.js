@@ -170,21 +170,51 @@ function quotePickerHtml(res, quickLabel) {
 function quoteBatchPickerHtml(p, qd) {
   const variants = p.variantes || [];
   return `<div class="quote-batch">
-    <div class="quote-batch-head"><div><b>${esc(p.nombre)}</b><small>Marca las opciones que necesitas. La cantidad se aplica a cada opción.</small></div><button type="button" class="btn ghost" data-qbatch-close>Cambiar producto</button></div>
-    <div class="quote-batch-tools"><label class="f"><span>Cantidad por opción</span><input type="number" id="q-batch-qty" value="1" min="1" step="1" inputmode="numeric"></label><button type="button" class="btn ghost" data-qbatch-all>Seleccionar todas</button></div>
+    <div class="quote-batch-head"><div><b>${esc(p.nombre)}</b><small>Marca los colores y escribe la cantidad exacta para cada uno.</small></div><button type="button" class="btn ghost" data-qbatch-close>Cambiar producto</button></div>
+    <div class="quote-batch-tools"><span class="muted">Pon la cantidad junto a cada opción.</span><button type="button" class="btn ghost" data-qbatch-all>Seleccionar todas</button></div>
     <div class="quote-batch-options">${variants.map(v => {
       const name = [v.color, v.talla].filter(Boolean).join(" / ") || "Variante";
       const existing = qd.items.find(i => i.productId === p.id && i.variantId === v.id);
-      return `<label class="quote-batch-option"><input type="checkbox" data-qvariant="${esc(v.id)}"><span class="qbo-name">${esc(name)}<small>Stock: ${qty(v.stock)}${existing ? ` · Ya en cotización: ${qty(existing.cant)}` : ""}</small></span><b class="num">${money(v.precio ?? p.precio)}</b></label>`;
+      return `<div class="quote-batch-option"><input type="checkbox" data-qvariant="${esc(v.id)}" ${existing ? "checked" : ""}><span class="qbo-name">${esc(name)}<small>Stock: ${qty(v.stock)}${existing ? " · Ya está en la cotización" : ""}</small></span><input class="qbo-qty" type="number" data-qvariant-qty="${esc(v.id)}" value="${existing ? esc(existing.cant) : "1"}" min="1" step="1" inputmode="numeric" aria-label="Cantidad de ${esc(name)}"><b class="num">${money(v.precio ?? p.precio)}</b></div>`;
     }).join("")}</div>
-    <div class="quote-batch-foot"><span class="muted">Puedes agregar varios colores o tallas juntos.</span><button type="button" class="btn primary" data-qbatch-add>Agregar seleccionadas</button></div>
+    <div class="quote-batch-foot"><span class="muted">La cantidad que escribas quedará como total para cada color.</span><button type="button" class="btn primary" data-qbatch-add>Agregar opciones</button></div>
   </div>`;
+}
+function quoteEditorItemsHtml(items) {
+  const groups = new Map();
+  items.forEach((item, index) => {
+    const grouped = item.productId && item.variantId;
+    const key = grouped ? "product:" + item.productId : "item:" + index;
+    if (!groups.has(key)) groups.set(key, { grouped, productId: item.productId, entries: [] });
+    groups.get(key).entries.push({ item, index });
+  });
+  return [...groups.values()].map(group => {
+    const p = group.grouped && S.products.find(x => x.id === group.productId);
+    const title = p ? p.nombre : group.entries[0].item.nombre.split(" – ")[0];
+    const rows = group.entries.map(({ item: i, index: k }) => {
+      const variantName = group.grouped ? [i.color, i.talla].filter(Boolean).join(" / ") || i.nombre.replace(title, "").replace(/^\s*[–-]\s*/, "") : i.nombre;
+      return `<div class="line">
+        <div class="nm">${esc(variantName)}<small>${i.productId ? esc(i.unidad || "und") : "ítem libre"}</small></div>
+        <input type="number" id="ql-cant-${k}" data-qcant="${k}" value="${i.cant}" min="0" step="1" inputmode="decimal" aria-label="Cantidad de ${esc(variantName)}">
+        <input type="number" id="ql-precio-${k}" data-qprecio="${k}" value="${i.precio}" min="0" step="0.01" inputmode="decimal" aria-label="Precio unitario de ${esc(variantName)}">
+        <span class="sub" data-qline-sub="${k}">${money(n2(i.cant) * n2(i.precio))}</span>
+        <button class="x" data-qrm="${k}" aria-label="Quitar ${esc(variantName)}">×</button>
+      </div>`;
+    }).join("");
+    if (!group.grouped) return rows;
+    const amount = group.entries.reduce((sum, x) => sum + n2(x.item.cant) * n2(x.item.precio), 0);
+    return `<details class="quote-item-group"><summary><span><b>${esc(title)}</b><small>${group.entries.length} ${group.entries.length === 1 ? "color o talla" : "colores y tallas"} · toca para editar</small></span><strong data-qgroup-total="${esc(group.productId)}">${money(amount)}</strong></summary><div class="quote-item-rows">${rows}</div></details>`;
+  }).join("");
 }
 function refreshQuoteEditorTotals() {
   if (!quoteEdit) return;
   quoteEdit.items.forEach((i, k) => {
     const amount = document.querySelector(`#v-cotizaciones [data-qline-sub="${k}"]`);
     if (amount) amount.textContent = money(n2(i.cant) * n2(i.precio));
+  });
+  document.querySelectorAll("#v-cotizaciones [data-qgroup-total]").forEach(el => {
+    const productId = el.dataset.qgroupTotal;
+    el.textContent = money(quoteEdit.items.filter(i => i.productId === productId && i.variantId).reduce((sum, i) => sum + n2(i.cant) * n2(i.precio), 0));
   });
   const total = Math.max(0, round2(quoteSubtotal(quoteEdit) - n2(quoteEdit.descuento)));
   const totalEl = document.querySelector("#v-cotizaciones .quote-editor .total-row b");
@@ -266,13 +296,7 @@ function renderQuoteEditor() {
         </div>
         <div class="lines">
           ${qd.items.length ? `<div class="line line-head"><span>Producto</span><span style="text-align:right">Cant.</span><span style="text-align:right">Precio</span><span class="sub">Importe</span><span></span></div>` : ""}
-          ${qd.items.map((i, k) => `<div class="line">
-              <div class="nm">${esc(i.nombre)}<small>${i.productId ? esc(i.unidad || "und") : "ítem libre"}</small></div>
-              <input type="number" id="ql-cant-${k}" data-qcant="${k}" value="${i.cant}" min="0" step="1" inputmode="decimal" aria-label="Cantidad">
-              <input type="number" id="ql-precio-${k}" data-qprecio="${k}" value="${i.precio}" min="0" step="0.01" inputmode="decimal" aria-label="Precio unitario">
-              <span class="sub" data-qline-sub="${k}">${money(n2(i.cant) * n2(i.precio))}</span>
-              <button class="x" data-qrm="${k}" aria-label="Quitar ${esc(i.nombre)}">×</button>
-            </div>`).join("") || `<p class="muted" style="margin:4px 0">Busca un producto arriba. Si no está en tu inventario, agrégalo como ítem libre.</p>`}
+          ${quoteEditorItemsHtml(qd.items) || `<p class="muted" style="margin:4px 0">Busca un producto arriba. Si no está en tu inventario, agrégalo como ítem libre.</p>`}
         </div>
         <div class="grid2">
           <label class="f"><span>Válida por</span><select id="q-validez">${[7, 15, 30, 60].map(d => `<option value="${d}" ${d === validez ? "selected" : ""}>${d} días</option>`).join("")}</select></label>
@@ -407,15 +431,19 @@ $("#v-cotizaciones").addEventListener("click", async e => {
       document.querySelectorAll("#v-cotizaciones [data-qvariant]").forEach(x => { x.checked = true; }); return;
     }
     if (t.hasAttribute("data-qbatch-add")) {
-      const p = S.products.find(x => x.id === quoteBatchProductId), cantidad = n2($("#q-batch-qty")?.value);
+      const p = S.products.find(x => x.id === quoteBatchProductId);
       const seleccionadas = [...document.querySelectorAll("#v-cotizaciones [data-qvariant]:checked")];
       if (!p) return;
-      if (!cantidad || cantidad < 1) return toast("Indica una cantidad mayor que cero.");
       if (!seleccionadas.length) return toast("Marca al menos un color o talla.");
-      seleccionadas.forEach(input => {
-        const v = (p.variantes || []).find(x => x.id === input.dataset.qvariant); if (!v) return;
+      const cambios = seleccionadas.map(input => {
+        const v = (p.variantes || []).find(x => x.id === input.dataset.qvariant);
+        const campo = [...document.querySelectorAll("#v-cotizaciones [data-qvariant-qty]")].find(x => x.dataset.qvariantQty === input.dataset.qvariant);
+        return { v, cantidad: n2(campo?.value) };
+      });
+      if (cambios.some(({ v, cantidad }) => !v || !Number.isInteger(cantidad) || cantidad < 1)) return toast("Revisa que cada cantidad seleccionada sea un número entero mayor que cero.");
+      cambios.forEach(({ v, cantidad }) => {
         const ex = quoteEdit.items.find(i => i.productId === p.id && i.variantId === v.id);
-        if (ex) ex.cant = n2(ex.cant) + cantidad;
+        if (ex) ex.cant = cantidad;
         else quoteEdit.items.push({ ...itemFromProduct(p, v), cant: cantidad });
       });
       quoteBatchProductId = null; quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor(); return $("#q-pick").focus();
