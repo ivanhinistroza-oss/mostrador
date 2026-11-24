@@ -527,6 +527,21 @@ dialog form{display:flex;flex-direction:column;gap:14px;padding:20px}
 /* Cotizaciones y reportes: hoja A4 (el estilo de la hoja está en A4_CSS) */
 .quotes{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
 .quote-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.quote-batch{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+.quote-batch-head,.quote-batch-tools,.quote-batch-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.quote-batch-head{margin-bottom:10px}
+.quote-batch-head b{display:block;font-size:14px;color:var(--fg)}
+.quote-batch-head small,.qbo-name small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--muted)}
+.quote-batch-tools{justify-content:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.quote-batch-tools .f{width:min(180px,100%)}
+.quote-batch-tools input{min-height:38px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.quote-batch-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:6px;max-height:260px;overflow:auto}
+.quote-batch-option{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.quote-batch-option:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.quote-batch-option input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.qbo-name{min-width:0;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.quote-batch-option b{font-size:12px;white-space:nowrap}
+.quote-batch-foot{margin-top:10px;flex-wrap:wrap}
 @media (max-width:1180px){.quotes,.quote-editor{grid-template-columns:minmax(0,1fr)}}
 .nrow .amt{text-align:right}
 .nrow .amt small{display:block;margin-top:2px}

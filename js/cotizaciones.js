@@ -109,7 +109,7 @@ function csvText(rows) {
 const quoteNum = n => "COT-" + String(n).padStart(5, "0");
 const blankQuote = () => ({ id: null, numero: null, cliente: "", doc: "", telefono: "", direccion: "", validez: 15, descuento: "", obs: store.get("mostrador.quoteObs") || "", items: [] });
 let quoteEdit = store.get("mostrador.quoteDraft"); // null: se ve la lista; un objeto: se está armando una cotización
-let quoteQ = "", quotePickQ = "", selQuote = null, quotesBlocked = false;
+let quoteQ = "", quotePickQ = "", quoteBatchProductId = null, selQuote = null, quotesBlocked = false;
 const saveQuoteDraft = () => store.set("mostrador.quoteDraft", quoteEdit);
 const quoteSubtotal = q => (q.items || []).reduce((a, i) => a + n2(i.cant) * n2(i.precio), 0);
 const nextQuoteNum = () => S.quotes.reduce((m, q) => Math.max(m, n2(q.numero)), 0) + 1;
@@ -156,6 +156,43 @@ function quoteDocHtml(q, preview) {
     ${q.obs ? `<div class="a4-notes"><h2>Condiciones y notas</h2><p>${esc(q.obs)}</p></div>` : ""}
     ${docFootHtml("Precios sujetos a stock disponible. Esta cotización no es un comprobante de pago.")}
   </article>`;
+}
+function quotePickerHtml(res, quickLabel) {
+  const fotos = anyFoto(), th = p => fotos ? thumbHtml(p, "sm") : "";
+  const rows = res.map(({ p }) => {
+    const variants = p.variantes || [];
+    return variants.length
+      ? `<button type="button" data-qbatch="${esc(p.id)}">${th(p)}<span>${esc(p.nombre)}</span><span class="num">${variants.length} opciones</span><small>Elegir colores y cantidad</small></button>`
+      : `<button type="button" data-addline="${esc(p.id)}">${th(p)}<span>${esc(p.nombre)}</span><span class="num">${money(p.precio)}</span><small>${esc(p.categoria || "Sin categoría")}</small><small class="num">stock ${qty(p.stock)} ${esc(p.unidad || "und")}</small></button>`;
+  }).join("");
+  return `<div class="results${fotos ? " with-thumb" : ""}">${rows || `<div style="padding:10px" class="muted">Sin coincidencias. <button class="btn ghost" data-quickadd="1" style="padding:2px 6px">${quickLabel}</button></div>`}</div>`;
+}
+function quoteBatchPickerHtml(p, qd) {
+  const variants = p.variantes || [];
+  return `<div class="quote-batch">
+    <div class="quote-batch-head"><div><b>${esc(p.nombre)}</b><small>Marca las opciones que necesitas. La cantidad se aplica a cada opción.</small></div><button type="button" class="btn ghost" data-qbatch-close>Cambiar producto</button></div>
+    <div class="quote-batch-tools"><label class="f"><span>Cantidad por opción</span><input type="number" id="q-batch-qty" value="1" min="1" step="1" inputmode="numeric"></label><button type="button" class="btn ghost" data-qbatch-all>Seleccionar todas</button></div>
+    <div class="quote-batch-options">${variants.map(v => {
+      const name = [v.color, v.talla].filter(Boolean).join(" / ") || "Variante";
+      const existing = qd.items.find(i => i.productId === p.id && i.variantId === v.id);
+      return `<label class="quote-batch-option"><input type="checkbox" data-qvariant="${esc(v.id)}"><span class="qbo-name">${esc(name)}<small>Stock: ${qty(v.stock)}${existing ? ` · Ya en cotización: ${qty(existing.cant)}` : ""}</small></span><b class="num">${money(v.precio ?? p.precio)}</b></label>`;
+    }).join("")}</div>
+    <div class="quote-batch-foot"><span class="muted">Puedes agregar varios colores o tallas juntos.</span><button type="button" class="btn primary" data-qbatch-add>Agregar seleccionadas</button></div>
+  </div>`;
+}
+function refreshQuoteEditorTotals() {
+  if (!quoteEdit) return;
+  quoteEdit.items.forEach((i, k) => {
+    const amount = document.querySelector(`#v-cotizaciones [data-qline-sub="${k}"]`);
+    if (amount) amount.textContent = money(n2(i.cant) * n2(i.precio));
+  });
+  const total = Math.max(0, round2(quoteSubtotal(quoteEdit) - n2(quoteEdit.descuento)));
+  const totalEl = document.querySelector("#v-cotizaciones .quote-editor .total-row b");
+  if (totalEl) totalEl.textContent = money(total);
+  const save = $("#q-save");
+  if (save) save.disabled = !quoteEdit.items.some(i => n2(i.cant) > 0);
+  const preview = document.querySelector("#v-cotizaciones .quote-editor > .a4-stage");
+  if (preview) preview.innerHTML = quoteDocHtml({ ...quoteEdit, numero: quoteEdit.numero || nextQuoteNum(), fecha: quoteEdit.fecha || new Date().toISOString(), vendedorNombre: quoteEdit.vendedorNombre || usuarioActual()?.nombre }, true);
 }
 function renderCotizaciones() {
   if (!exigir("cotizacion.ver", "ver cotizaciones")) return;
@@ -224,7 +261,8 @@ function renderQuoteEditor() {
         </div>
         <div class="picker">
           <div class="scan-row"><label class="f"><span>Agregar producto</span><input type="search" id="q-pick" value="${esc(quotePickQ)}" placeholder="Escribe nombre o código" autocomplete="off"></label><button type="button" class="btn" id="q-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button></div>
-          ${norm(quotePickQ) ? pickerResultsHtml(res, `Agregar «${esc(quotePickQ)}» como ítem libre`) : ""}
+          ${norm(quotePickQ) ? quotePickerHtml(res, `Agregar «${esc(quotePickQ)}» como ítem libre`) : ""}
+          ${quoteBatchProductId ? (() => { const p = S.products.find(x => x.id === quoteBatchProductId); return p ? quoteBatchPickerHtml(p, qd) : ""; })() : ""}
         </div>
         <div class="lines">
           ${qd.items.length ? `<div class="line line-head"><span>Producto</span><span style="text-align:right">Cant.</span><span style="text-align:right">Precio</span><span class="sub">Importe</span><span></span></div>` : ""}
@@ -232,7 +270,7 @@ function renderQuoteEditor() {
               <div class="nm">${esc(i.nombre)}<small>${i.productId ? esc(i.unidad || "und") : "ítem libre"}</small></div>
               <input type="number" id="ql-cant-${k}" data-qcant="${k}" value="${i.cant}" min="0" step="1" inputmode="decimal" aria-label="Cantidad">
               <input type="number" id="ql-precio-${k}" data-qprecio="${k}" value="${i.precio}" min="0" step="0.01" inputmode="decimal" aria-label="Precio unitario">
-              <span class="sub">${money(n2(i.cant) * n2(i.precio))}</span>
+              <span class="sub" data-qline-sub="${k}">${money(n2(i.cant) * n2(i.precio))}</span>
               <button class="x" data-qrm="${k}" aria-label="Quitar ${esc(i.nombre)}">×</button>
             </div>`).join("") || `<p class="muted" style="margin:4px 0">Busca un producto arriba. Si no está en tu inventario, agrégalo como ítem libre.</p>`}
         </div>
@@ -342,7 +380,7 @@ async function saveQuote(btn) {
   try {
     await putQuote(quote);
     store.set("mostrador.quoteObs", quote.obs);
-    quoteEdit = null; quotePickQ = ""; saveQuoteDraft();
+    quoteEdit = null; quotePickQ = ""; quoteBatchProductId = null; saveQuoteDraft();
     selQuote = quote.id;
     toast("Cotización " + quoteNum(quote.numero) + " guardada");
     renderCotizaciones();
@@ -354,27 +392,50 @@ $("#v-cotizaciones").addEventListener("click", async e => {
   if (t.dataset.quote) { selQuote = t.dataset.quote; return renderCotizaciones(); }
   if (t.id === "q-new") {
     if (!exigir("cotizacion.crear", "crear cotizaciones")) return;
-    quoteEdit = blankQuote(); quotePickQ = ""; saveQuoteDraft(); return renderCotizaciones();
+    quoteEdit = blankQuote(); quotePickQ = ""; quoteBatchProductId = null; saveQuoteDraft(); return renderCotizaciones();
   }
   // editor
   if (quoteEdit) {
     if (t.id === "q-scan") return abrirEscaner(cotizacionCodigo, "Apunta la cámara a cada producto. Se agregan solos; toca Listo al terminar.");
+    if (t.hasAttribute("data-qbatch")) {
+      quoteBatchProductId = t.dataset.qbatch; quotePickQ = ""; return renderQuoteEditor();
+    }
+    if (t.hasAttribute("data-qbatch-close")) {
+      quoteBatchProductId = null; renderQuoteEditor(); return $("#q-pick").focus();
+    }
+    if (t.hasAttribute("data-qbatch-all")) {
+      document.querySelectorAll("#v-cotizaciones [data-qvariant]").forEach(x => { x.checked = true; }); return;
+    }
+    if (t.hasAttribute("data-qbatch-add")) {
+      const p = S.products.find(x => x.id === quoteBatchProductId), cantidad = n2($("#q-batch-qty")?.value);
+      const seleccionadas = [...document.querySelectorAll("#v-cotizaciones [data-qvariant]:checked")];
+      if (!p) return;
+      if (!cantidad || cantidad < 1) return toast("Indica una cantidad mayor que cero.");
+      if (!seleccionadas.length) return toast("Marca al menos un color o talla.");
+      seleccionadas.forEach(input => {
+        const v = (p.variantes || []).find(x => x.id === input.dataset.qvariant); if (!v) return;
+        const ex = quoteEdit.items.find(i => i.productId === p.id && i.variantId === v.id);
+        if (ex) ex.cant = n2(ex.cant) + cantidad;
+        else quoteEdit.items.push({ ...itemFromProduct(p, v), cant: cantidad });
+      });
+      quoteBatchProductId = null; quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor(); return $("#q-pick").focus();
+    }
     if (t.dataset.addline) {
       const p = S.products.find(x => x.id === t.dataset.addline); if (!p) return;
       const v = t.dataset.variant && p.variantes && p.variantes.find(x => x.id === t.dataset.variant);
       if (p.variantes && p.variantes.length && !v) return;
       const ex = quoteEdit.items.find(i => i.productId === p.id && i.variantId === (v && v.id));
       if (ex) ex.cant = n2(ex.cant) + 1; else quoteEdit.items.push(itemFromProduct(p, v));
-      quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor(); return $("#q-pick").focus();
+      quoteBatchProductId = null; quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor(); return $("#q-pick").focus();
     }
     if (t.dataset.quickadd) {
       quoteEdit.items.push({ nombre: quotePickQ.trim(), unidad: "und", cant: 1, precio: 0 });
-      quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor();
+      quoteBatchProductId = null; quotePickQ = ""; saveQuoteDraft(); renderQuoteEditor();
       const k = quoteEdit.items.length - 1; const input = $("#ql-precio-" + k); if (input) { input.focus(); input.select(); }
       return;
     }
     if (t.dataset.qrm) { quoteEdit.items.splice(+t.dataset.qrm, 1); saveQuoteDraft(); return renderQuoteEditor(); }
-    if (t.id === "q-cancel") { quoteEdit = null; quotePickQ = ""; saveQuoteDraft(); return renderCotizaciones(); }
+    if (t.id === "q-cancel") { quoteEdit = null; quotePickQ = ""; quoteBatchProductId = null; saveQuoteDraft(); return renderCotizaciones(); }
     if (t.id === "q-save") return saveQuote(t);
     return;
   }
@@ -383,12 +444,12 @@ $("#v-cotizaciones").addEventListener("click", async e => {
   if (t.id === "q-wa") return sendQuotePdf(sel, t);
   if (t.id === "q-edit") {
     if (!exigir("cotizacion.editar", "editar cotizaciones")) return;
-    quoteEdit = { ...structuredClone(sel), descuento: sel.descuento || "" }; quotePickQ = ""; saveQuoteDraft(); return renderCotizaciones();
+    quoteEdit = { ...structuredClone(sel), descuento: sel.descuento || "" }; quotePickQ = ""; quoteBatchProductId = null; saveQuoteDraft(); return renderCotizaciones();
   }
   if (t.id === "q-copy") {
     if (!exigir("cotizacion.crear", "crear cotizaciones")) return;
     quoteEdit = { ...blankQuote(), cliente: sel.cliente || "", doc: sel.doc || "", telefono: sel.telefono || "", direccion: sel.direccion || "", validez: sel.validez || 15, descuento: sel.descuento || "", obs: sel.obs || "", items: structuredClone(sel.items || []) };
-    quotePickQ = ""; saveQuoteDraft(); toast("Copia lista para editar"); return renderCotizaciones();
+    quotePickQ = ""; quoteBatchProductId = null; saveQuoteDraft(); toast("Copia lista para editar"); return renderCotizaciones();
   }
   if (t.id === "q-sell") {
     if (!exigir("venta.crear", "crear ventas")) return;
@@ -411,12 +472,14 @@ $("#v-cotizaciones").addEventListener("input", e => {
   if (t.id === "quoteSearch") { quoteQ = t.value; return renderCotizaciones(); }
   if (!quoteEdit) return;
   const fields = { "q-cliente": "cliente", "q-doc": "doc", "q-tel": "telefono", "q-dir": "direccion", "q-obs": "obs", "q-validez": "validez", "q-desc": "descuento" };
-  if (t.id === "q-pick") quotePickQ = t.value;
+  if (t.id === "q-pick") { quotePickQ = t.value; quoteBatchProductId = null; }
   else if (fields[t.id]) quoteEdit[fields[t.id]] = t.value;
-  else if (t.dataset.qcant) quoteEdit.items[+t.dataset.qcant].cant = t.value === "" ? "" : n2(t.value);
-  else if (t.dataset.qprecio) quoteEdit.items[+t.dataset.qprecio].precio = t.value === "" ? "" : n2(t.value);
+  else if (t.dataset.qcant) quoteEdit.items[+t.dataset.qcant].cant = t.value;
+  else if (t.dataset.qprecio) quoteEdit.items[+t.dataset.qprecio].precio = t.value;
   else return;
-  saveQuoteDraft(); renderQuoteEditor();
+  saveQuoteDraft();
+  if (t.dataset.qcant || t.dataset.qprecio) return refreshQuoteEditorTotals();
+  renderQuoteEditor();
 });
 $("#v-cotizaciones").addEventListener("keydown", e => {
   if (e.target.id === "q-pick" && e.key === "Enter") {
@@ -427,7 +490,7 @@ $("#v-cotizaciones").addEventListener("keydown", e => {
       quotePickQ = ""; renderQuoteEditor();
       return toast("No hay ningún producto con el código " + t);
     }
-    const b = $("#v-cotizaciones [data-addline]") || $("#v-cotizaciones [data-quickadd]");
+    const b = $("#v-cotizaciones [data-addline], #v-cotizaciones [data-qbatch], #v-cotizaciones [data-quickadd]");
     if (b) b.click();
   }
 });
