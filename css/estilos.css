@@ -438,6 +438,10 @@ dialog form{display:flex;flex-direction:column;gap:14px;padding:20px}
 /* Venta */
 .sale{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
 @media (max-width:860px){.sale{grid-template-columns:minmax(0,1fr)}}
+.cash-change{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.7fr);gap:14px;align-items:end;margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.cash-change-result{display:flex;flex-direction:column;gap:4px;padding:0 4px 10px;color:var(--muted)}
+.cash-change-result b{font:600 20px var(--f-mono);color:var(--fg)}
+@media(max-width:520px){.cash-change{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px}
 .picker{position:relative}
 .results{border:1px solid var(--line);border-radius:8px;margin-top:6px;max-height:280px;overflow:auto;background:var(--surface)}

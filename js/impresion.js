@@ -68,6 +68,7 @@ function ticketHtml(n, preview, settings = S.settings) {
     <div class="tr tot"><span>TOTAL</span><span>${money(n.total)}</span></div>
     ${s.montoEnLetras !== false ? `<div class="amount-words">SON: ${esc(numeroALetras(n.total, s.moneda || "S/"))}</div>` : ""}
     ${n.pago ? `<div class="tr"><span>Medio de pago</span><span>${esc(n.pago)}</span></div>` : ""}
+    ${n.recibido != null ? `<div class="tr"><span>Efectivo recibido</span><span>${money(n.recibido)}</span></div><div class="tr"><span>Vuelto</span><span>${money(n.vuelto || 0)}</span></div>` : ""}
     ${n.obs ? `<hr><div class="wrap">Obs.: ${esc(n.obs)}</div>` : ""}
     ${s.mostrarRedes !== false && social.length ? `<hr><div class="c"><b>Síguenos</b></div>${social.map(x => `<div class="c wrap">${x}</div>`).join("")}` : ""}
     <hr><div class="c">${esc(s.mensajeFinal || "Gracias por su compra")}</div>
@@ -98,6 +99,7 @@ function ticketText(n) {
   L.push(hr, pad("TOTAL", money(n.total)));
   if (s.montoEnLetras !== false) L.push("SON: " + numeroALetras(n.total, s.moneda || "S/"));
   if (n.pago) L.push(pad("Medio de pago", n.pago));
+  if (n.recibido != null) L.push(pad("Efectivo recibido", money(n.recibido)), pad("Vuelto", money(n.vuelto || 0)));
   if (n.obs) L.push(hr, "Obs.: " + n.obs);
   if (n.estado === "anulada") L.push(hr, ctr("*** NOTA ANULADA ***"));
   const social = [

@@ -13,7 +13,7 @@ function pagoResumen(notes) {
   });
   return [...totals.values()].sort((a, b) => b.total - a.total);
 }
-const blankDraft = () => ({ cliente: "", doc: "", obs: "", pago: PAGO_INICIAL, items: [] });
+const blankDraft = () => ({ cliente: "", doc: "", obs: "", pago: PAGO_INICIAL, recibido: "", items: [] });
 let draft = store.get("mostrador.draft") || blankDraft();
 let pickQ = "", pickTimer = 0;
 const saveDraft = () => store.set("mostrador.draft", draft);
@@ -27,6 +27,12 @@ function renderVenta() {
   const q = norm(pickQ);
   const res = productMatches(pickQ);
   const total = draftTotal();
+  const esEfectivo = (draft.pago || PAGO_INICIAL) === PAGO_INICIAL;
+  const recibidoTxt = String(draft.recibido || "").trim().replace(",", ".");
+  const recibido = /^\d+(\.\d{1,2})?$/.test(recibidoTxt) ? Number(recibidoTxt) : NaN;
+  const recibidoValido = Number.isFinite(recibido);
+  const vuelto = recibidoValido ? round2(recibido - total) : null;
+  const pagoInvalido = esEfectivo && (!recibidoValido || vuelto < 0);
   el.innerHTML = `
     <div class="toolbar"><h1 style="margin-right:auto">Nueva nota de venta</h1><span class="muted num">${folioTxt(nextFolio())}</span></div>
     ${S.cajas.length && !cajaAbierta() ? `<div class="banner venta-caja"><span>La caja está cerrada: esta venta no entrará en ningún cierre.</span><button class="btn" data-view="caja">Abrir caja</button></div>` : ""}
@@ -57,14 +63,15 @@ function renderVenta() {
           }).join("") || `<p class="muted" style="margin:4px 0">Busca un producto arriba para agregarlo a la nota.</p>`}
         </div>
         <div class="pay-field"><span id="d-pago-label">Medio de pago</span><div class="pay-opts" role="group" aria-labelledby="d-pago-label">${MEDIOS_PAGO.map(m => `<button type="button" data-pago="${esc(m)}" aria-pressed="${(draft.pago || PAGO_INICIAL) === m}">${esc(m)}</button>`).join("")}</div></div>
+        ${esEfectivo ? `<div class="cash-change"><label class="f"><span>Monto recibido en efectivo</span><input type="text" inputmode="decimal" id="d-recibido" value="${esc(draft.recibido)}" placeholder="Ingresa el monto recibido" autocomplete="off" aria-describedby="d-vuelto"></label><div class="cash-change-result" id="d-vuelto" aria-live="polite"><span>Vuelto</span><b>${vuelto === null ? "Ingresa cuánto recibió" : vuelto < 0 ? "Falta " + money(-vuelto) : money(vuelto)}</b></div></div>` : ""}
         <label class="f"><span>Observaciones</span><textarea id="d-obs" placeholder="Ej. Entrega a domicilio">${esc(draft.obs)}</textarea></label>
         <div class="total-row"><span>Total</span><b id="d-total">${money(total)}</b></div>
         <div class="actions">
           <button class="btn ghost" id="d-clear" ${draft.items.length || draft.cliente ? "" : "disabled"}>Vaciar</button>
-          <div class="r"><button class="btn primary" id="d-emit" ${draft.items.some(i => n2(i.cant) > 0) ? "" : "disabled"}>Emitir nota y descontar stock</button></div>
+          <div class="r"><button class="btn primary" id="d-emit" ${draft.items.some(i => n2(i.cant) > 0) && !pagoInvalido ? "" : "disabled"}>Emitir nota y descontar stock</button></div>
         </div>
       </div>
-      ${ticketHtml({ folio: nextFolio(), fecha: new Date().toISOString(), cliente: draft.cliente, doc: draft.doc, obs: draft.obs, pago: draft.pago || PAGO_INICIAL, items: draft.items.filter(i => n2(i.cant) > 0), total }, true)}
+      ${ticketHtml({ folio: nextFolio(), fecha: new Date().toISOString(), cliente: draft.cliente, doc: draft.doc, obs: draft.obs, pago: draft.pago || PAGO_INICIAL, recibido: esEfectivo && recibidoValido ? recibido : null, vuelto: esEfectivo && recibidoValido && vuelto >= 0 ? vuelto : null, items: draft.items.filter(i => n2(i.cant) > 0), total }, true)}
     </div>`;
   if (focusId && document.getElementById(focusId)) { const i = document.getElementById(focusId); i.focus(); try { i.setSelectionRange(caret, caret); } catch {} }
 }
@@ -110,7 +117,7 @@ $("#v-venta").addEventListener("click", async e => {
   if (t.dataset.addline) { const p = S.products.find(x => x.id === t.dataset.addline); if (p) addLine(p,t.dataset.variant&&p.variantes&&p.variantes.find(v=>v.id===t.dataset.variant)); return; }
   if (t.dataset.rmline) { draft.items.splice(+t.dataset.rmline, 1); saveDraft(); return renderVenta(); }
   if (t.dataset.quickadd) { const name = pickQ; pickQ = ""; openProduct(null); $("#p-nombre").value = name; showSimilar(); return; }
-  if (t.dataset.pago) { draft.pago = t.dataset.pago; saveDraft(); return renderVenta(); }
+  if (t.dataset.pago) { draft.pago = t.dataset.pago; if (draft.pago !== PAGO_INICIAL) draft.recibido = ""; saveDraft(); return renderVenta(); }
   if (t.id === "d-scan") return abrirEscaner(ventaCodigo, "Apunta la cámara a cada producto. Se agregan solos; toca Listo al terminar.");
   if (t.id === "d-clear") { draft = blankDraft(); saveDraft(); return renderVenta(); }
   if (t.id === "d-emit") return emitNote(t);
@@ -128,6 +135,7 @@ $("#v-venta").addEventListener("input", e => {
   if (t.id === "d-cliente") { draft.cliente = t.value; saveDraft(); return renderVenta(); }
   if (t.id === "d-doc") { draft.doc = t.value; saveDraft(); return renderVenta(); }
   if (t.id === "d-obs") { draft.obs = t.value; saveDraft(); return renderVenta(); }
+  if (t.id === "d-recibido") { draft.recibido = t.value; saveDraft(); return renderVenta(); }
   if (t.dataset.cant) { draft.items[+t.dataset.cant].cant = t.value === "" ? "" : n2(t.value); saveDraft(); return renderVenta(); }
   if (t.dataset.precio) { draft.items[+t.dataset.precio].precio = t.value === "" ? "" : n2(t.value); saveDraft(); return renderVenta(); }
 });
@@ -156,12 +164,17 @@ async function emitNote(btn) {
     return linea;
   });
   if (!items.length) return;
+  const totalCobro = round2(items.reduce((a, i) => a + i.cant * i.precio, 0));
+  const esEfectivo = (draft.pago || PAGO_INICIAL) === PAGO_INICIAL;
+  const recibidoTxt = String(draft.recibido || "").trim().replace(",", ".");
+  const recibido = esEfectivo ? (/^\d+(\.\d{1,2})?$/.test(recibidoTxt) ? Number(recibidoTxt) : NaN) : null;
+  if (esEfectivo && (!Number.isFinite(recibido) || recibido < totalCobro)) return toast("Ingresa el efectivo recibido. Debe ser igual o mayor al total.");
   btn.disabled = true;
   const fromQuote = draft.cotizacionId;
   const note = {
     id: uid(), folio: nextFolio(), fecha: new Date().toISOString(),
     cliente: draft.cliente.trim(), doc: draft.doc.trim(), docTipo: docTipo(draft.doc), obs: draft.obs.trim(), pago: draft.pago || PAGO_INICIAL,
-    items, total: Math.round(items.reduce((a, i) => a + i.cant * i.precio, 0) * 100) / 100, estado: "emitida",
+    items, total: totalCobro, ...(esEfectivo ? { recibido: round2(recibido), vuelto: round2(recibido - totalCobro) } : {}), estado: "emitida",
   };
   try {
     await flushPendingStock();

@@ -1,7 +1,7 @@
 // ---------- caja: apertura y cierre ----------
 // Una sola caja abierta por negocio. Compara el efectivo esperado (monto inicial + ventas en efectivo
 // desde la apertura) con el contado. Yape, Plin, tarjeta y transferencia se informan, pero no entran al efectivo.
-let cajaForm = { inicial: "", contado: "", obs: "" }, cajasBlocked = false;
+let cajaForm = { inicial: "", contado: "", obs: "", obsApertura: "" }, cajasBlocked = false;
 const cajaAbierta = () => S.cajas.filter(c => c.estado === "abierta").sort((a, b) => String(b.abiertaEn).localeCompare(String(a.abiertaEn)))[0] || null;
 const cajasCerradas = () => S.cajas.filter(c => c.estado === "cerrada").sort((a, b) => String(b.cerradaEn).localeCompare(String(a.cerradaEn)));
 // acepta 150, 150.50 o 150,50; lo demás (como 1,200) se rechaza para no leer mal el monto
@@ -28,7 +28,7 @@ function cajaTicketHtml(c) {
   return `<div class="ticket">
     <div class="c biz">${esc(S.settings.negocio)}</div>
     <div class="c"><b>CIERRE DE CAJA</b></div><hr>
-    ${tr("Apertura", fmtDate(c.abiertaEn))}${tr("Abrió", c.abiertaPorNombre || "")}
+    ${tr("Apertura", fmtDate(c.abiertaEn))}${tr("Abrió", c.abiertaPorNombre || "")}${c.obsApertura ? `<div class="wrap">Obs. de apertura: ${esc(c.obsApertura)}</div>` : ""}
     ${tr("Cierre", fmtDate(c.cerradaEn))}${tr("Cerró", c.cerradaPorNombre || "")}<hr>
     ${tr("Monto inicial", money(c.montoInicial))}${tr("Ventas en efectivo", money(c.efectivo))}
     ${tr("Efectivo esperado", money(c.esperado))}${tr("Efectivo contado", money(c.contado))}
@@ -89,6 +89,7 @@ function renderCaja() {
         <span class="rc-big-icon">${rsIcon("candado")}</span><h2>Abrir caja</h2>
         <p class="muted">Cuenta el efectivo con el que empiezas, por ejemplo el sencillo para dar vuelto.</p>
         <label class="f"><span>Monto inicial en efectivo</span><input type="text" inputmode="decimal" id="c-inicial" value="${esc(cajaForm.inicial)}" placeholder="0.00" autocomplete="off"></label>
+        <label class="f"><span>Observaciones de apertura</span><textarea id="c-obs-apertura" rows="2" placeholder="Ej. Fondo recibido de la encargada">${esc(cajaForm.obsApertura)}</textarea></label>
         <div class="caja-actions"><button class="btn primary" id="c-abrir">Abrir caja</button></div>
       </div>`;
   el.innerHTML = `
@@ -106,7 +107,7 @@ function renderCaja() {
         <td><button class="btn" data-caja-print="${esc(c.id)}">Imprimir</button></td></tr>`).join("")}</tbody>
     </table></div>${cerradas.length > 30 ? `<p class="muted">Se muestran los últimos 30 cierres.</p>` : ""}` : ""}`;
   cajaDifActualizar(res);
-  if (focusId === "c-contado" || focusId === "c-inicial" || focusId === "c-obs") {
+  if (["c-contado", "c-inicial", "c-obs", "c-obs-apertura"].includes(focusId)) {
     const i = $("#" + focusId);
     if (i) { i.focus(); i.setSelectionRange(caret, caret); }
   }
@@ -119,6 +120,7 @@ function cajaDifActualizar(res) {
 $("#v-caja").addEventListener("input", e => {
   const id = e.target.id;
   if (id === "c-inicial") cajaForm.inicial = e.target.value;
+  else if (id === "c-obs-apertura") cajaForm.obsApertura = e.target.value;
   else if (id === "c-obs") cajaForm.obs = e.target.value;
   else if (id === "c-contado") {
     cajaForm.contado = e.target.value;
@@ -143,8 +145,9 @@ $("#v-caja").addEventListener("click", async e => {
     if (monto === null) return toast("Escribe el monto inicial, por ejemplo 150.50");
     t.disabled = true;
     try {
-      await putCaja({ id: uid(), estado: "abierta", abiertaEn: new Date().toISOString(), abiertaPorId: user.id, abiertaPorNombre: user.nombre || "", montoInicial: monto });
+      await putCaja({ id: uid(), estado: "abierta", abiertaEn: new Date().toISOString(), abiertaPorId: user.id, abiertaPorNombre: user.nombre || "", montoInicial: monto, obsApertura: cajaForm.obsApertura.trim() });
       cajaForm.inicial = "";
+      cajaForm.obsApertura = "";
       toast("Caja abierta con " + money(monto));
       renderAll();
     } catch (err) { t.disabled = false; toast(failMsg(err)); }
