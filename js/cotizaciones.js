@@ -19,6 +19,7 @@ const A4_CSS = `
 .a4 table{width:100%;border-collapse:collapse;margin:6px 0 4px}
 .a4 th{background:var(--a4-accent);color:#fff;font-weight:600;text-align:left;padding:7px 8px;font-size:.92em}
 .a4 td{padding:7px 8px;border-bottom:1px solid var(--a4-line);vertical-align:top;overflow-wrap:anywhere}
+.a4 th:first-child,.a4 td:first-child{min-width:3em;white-space:nowrap;overflow-wrap:normal}
 .a4 tbody tr:nth-child(even) td{background:#f5f8f7}
 .a4 .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .a4 tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--a4-accent)}
@@ -143,7 +144,7 @@ function quoteDocHtml(q, preview) {
       </div>
     </div>
     <table>
-      <thead><tr><th style="width:2.4em">#</th><th>Descripción</th><th class="n">Cant.</th><th class="n">P. unit.</th><th class="n">Importe</th></tr></thead>
+      <thead><tr><th style="width:3em">#</th><th>Descripción</th><th class="n">Cant.</th><th class="n">P. unit.</th><th class="n">Importe</th></tr></thead>
       <tbody>${items.map((i, k) => `<tr><td>${k + 1}</td><td>${esc(i.nombre)}</td><td class="n">${qty(i.cant)} ${esc(i.unidad || "")}</td><td class="n">${money(i.precio)}</td><td class="n">${money(n2(i.cant) * n2(i.precio))}</td></tr>`).join("")
         || `<tr><td colspan="5" class="a4-empty">Agrega productos a la cotización.</td></tr>`}</tbody>
     </table>
