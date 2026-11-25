@@ -18,6 +18,7 @@ renderLogin();
       mem.users = new Map((saved.users || []).filter(u => u && u.id).map(u => [u.id, u]));
       mem.quotes = new Map((saved.quotes || []).filter(q => q && q.id).map(q => [q.id, q]));
       mem.cajas = new Map((saved.cajas || []).filter(x => x && x.id).map(x => [x.id, x]));
+      mem.pedidos = new Map((saved.pedidos || []).filter(x => x && x.id).map(x => [x.id, x]));
       if (saved.settings) S.settings = { ...S.settings, ...saved.settings };
       syncMem();
     }
@@ -105,6 +106,18 @@ function escucharDatos() {
     setTimeout(() => { if (db === quotesDb) escucharCotizaciones(); }, 10000);
   });
   escucharCotizaciones();
+  const pedidosDb = db;
+  const escucharPedidos = () => db.collection("pedidos").onSnapshot(snap => {
+    S.pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!fbMode) mem.pedidos = new Map(S.pedidos.map(p => [p.id, p]));
+    pedidosBlocked = false;
+    if (S.view === "pedidos") renderPedidos();
+  }, e => {
+    pedidosBlocked = !!(e && ["permission-denied", "not-found", "invalid-argument"].includes(e.code));
+    if (S.view === "pedidos") renderPedidos();
+    setTimeout(() => { if (db === pedidosDb) escucharPedidos(); }, 10000);
+  });
+  escucharPedidos();
   // la caja tampoco detiene la app: sin las reglas nuevas se sigue vendiendo y solo se avisa en la vista Caja
   const cajasDb = db;
   const cajasLlegan = snap => {

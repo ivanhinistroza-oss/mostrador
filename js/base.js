@@ -1,6 +1,6 @@
 // ---------- estado ----------
 const S = {
-  products: [], notes: [], users: [], quotes: [], cajas: [],
+  products: [], notes: [], users: [], quotes: [], cajas: [], pedidos: [],
   settings: { negocio: "Mi negocio", moneda: "S/" },
   view: "inventario", group: "categoria", q: "", lowOnly: false,
   selNote: null, online: false, loaded: false,
@@ -94,8 +94,8 @@ function clusters(list) {
 }
 
 // ---------- datos ----------
-const mem = { products: new Map(), notes: new Map(), users: new Map(), quotes: new Map(), cajas: new Map(), settings: null };
-const PERMISOS = { admin: ["*"], vendedor: ["inventario.ver", "venta.crear", "nota.ver", "nota.imprimir", "cotizacion.ver", "cotizacion.crear", "caja.usar"] };
+const mem = { products: new Map(), notes: new Map(), users: new Map(), quotes: new Map(), cajas: new Map(), pedidos: new Map(), settings: null };
+const PERMISOS = { admin: ["*"], vendedor: ["inventario.ver", "venta.crear", "nota.ver", "nota.imprimir", "cotizacion.ver", "cotizacion.crear", "caja.usar", "pedido.ver", "pedido.crear", "pedido.actualizar", "pedido.foto"] };
 let sessionId = null;
 let saleAdjusting = false;
 let failedLogins = 0;
@@ -224,6 +224,7 @@ function aplicarPermisosUI() {
   document.querySelectorAll('[data-view="ventas"],[data-view="reportes"],[data-view="resumen"],[data-view="usuarios"]')
     .forEach(button => button.hidden = !admin);
   document.querySelector('[data-view="config"]').hidden = !puede("ajustes.editar");
+  document.querySelector('[data-view="pedidos"]').hidden = !puede("pedido.ver");
   $("#userMenu").hidden = false;
   const user = usuarioActual();
   const role = user?.rol === "admin" ? "Administrador" : "Vendedor";
@@ -353,9 +354,9 @@ async function putSettings(s) {
   else { mem.settings = s; S.settings = { negocio: "Mi negocio", moneda: "S/", ...s }; syncMem(); }
 }
 function syncMem() {
-  S.products = [...mem.products.values()]; S.notes = [...mem.notes.values()]; S.users = [...mem.users.values()]; S.quotes = [...mem.quotes.values()]; S.cajas = [...mem.cajas.values()];
+  S.products = [...mem.products.values()]; S.notes = [...mem.notes.values()]; S.users = [...mem.users.values()]; S.quotes = [...mem.quotes.values()]; S.cajas = [...mem.cajas.values()]; S.pedidos = [...mem.pedidos.values()];
   if (!db) {
-    try { localStorage.setItem("mostrador.data", JSON.stringify({ products: S.products, notes: S.notes, users: S.users, quotes: S.quotes, cajas: S.cajas, settings: S.settings })); }
+    try { localStorage.setItem("mostrador.data", JSON.stringify({ products: S.products, notes: S.notes, users: S.users, quotes: S.quotes, cajas: S.cajas, pedidos: S.pedidos, settings: S.settings })); }
     catch { const b = $("#banner"); b.textContent = "No se pudo guardar en este navegador. Exporta una copia y libera espacio."; b.hidden = false; }
   }
   simCache.clear(); renderAll();

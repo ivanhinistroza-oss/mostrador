@@ -44,7 +44,7 @@ function fbDetener() {
   webCat = null; clearTimeout(webTimer);
   if (fb) { fb.invUnsub = null; fb.negocioId = null; fb.dueno = null; }
   db = null; sessionId = null;
-  S.products = []; S.notes = []; S.users = []; S.quotes = []; S.cajas = []; cajasBlocked = false; salesRangoCache.clear(); S.loaded = false;
+  S.products = []; S.notes = []; S.users = []; S.quotes = []; S.cajas = []; S.pedidos = []; cajasBlocked = false; salesRangoCache.clear(); S.loaded = false;
   notasDesde = null; notasInicio = null; notasEscuchar = null; notasFolioMax = 0; notasDeCache = false;
   S.settings = { negocio: "Mi negocio", moneda: "S/" };
 }
@@ -77,6 +77,11 @@ function fbDb(nid) {
       get: async () => ({ docs: (await F.getDocs(F.collection(fs, base + name))).docs.map(wrap) }),
       onSnapshot: (cb, err) => fbTrack(F.onSnapshot(F.collection(fs, base + name), s => cb({ docs: s.docs.map(wrap) }), err)),
     }),
+    pedidosRelacionados: async (tabla, pedidoId) => {
+      if (!["pedido_eventos", "pedidos_fotos"].includes(tabla)) throw new Error("Colección de pedidos no válida.");
+      const ref = F.query(F.collection(fs, base + tabla), F.where("pedidoId", "==", pedidoId));
+      return (await F.getDocs(ref)).docs.map(wrap);
+    },
     // para el folio basta la nota más alta; leer todas en cada venta gastaría la cuota gratis
     // notas desde una fecha (null = todas); avisa si lo que llega aún viene de la copia del equipo
     notesDesde: (desde, cb, err) => {

@@ -49,10 +49,10 @@ escucharSesion(s => { if (s) fuera.enviarCola(); });
 export { FueraDeLinea };
 
 const POR_PAGINA = 1000;
-const TABLAS_EN_VIVO = ["products", "notes", "quotes", "cajas", "settings", "miembros", "invitaciones", "catalogo_productos", "eliminados"];
-const SUBCOLECCIONES = new Set(["miembros", "products", "notes", "quotes", "cajas", "settings", "nombres"]);
+const TABLAS_EN_VIVO = ["products", "notes", "quotes", "pedidos", "cajas", "settings", "miembros", "invitaciones", "catalogo_productos", "eliminados"];
+const SUBCOLECCIONES = new Set(["miembros", "products", "notes", "quotes", "pedidos", "pedido_eventos", "pedidos_fotos", "cajas", "settings", "nombres"]);
 // Solo estos campos existen como columnas para filtrar y ordenar.
-const COLUMNAS = { fecha: "fecha", folio: "folio", abiertaEn: "abierta_en", negocioId: "negocio_id", actualizado: "actualizado", creado: "creado" };
+const COLUMNAS = { fecha: "fecha", folio: "folio", abiertaEn: "abierta_en", negocioId: "negocio_id", actualizado: "actualizado", creado: "creado", pedidoId: "pedido_id" };
 
 // ---------- valores especiales ----------
 export class Timestamp {

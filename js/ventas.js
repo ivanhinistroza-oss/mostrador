@@ -372,6 +372,7 @@ async function exportSalesCsv(notes, btn) {
 const mobileViewTitles = {
   inventario: "Inventario",
   venta: "Nueva venta",
+  pedidos: "Pedidos",
   notas: "Notas",
   caja: "Caja",
   cotizaciones: "Cotizaciones",

@@ -1,7 +1,7 @@
-const VIEWS = ["inventario", "venta", "notas", "caja", "cotizaciones", "ventas", "reportes", "resumen", "usuarios", "config"];
+const VIEWS = ["inventario", "venta", "pedidos", "notas", "caja", "cotizaciones", "ventas", "reportes", "resumen", "usuarios", "config"];
 function go(view) {
   const needed = view === "ventas" || view === "resumen" || view === "reportes" ? "estadisticas.ver"
-    : view === "usuarios" ? "usuarios.gestionar" : view === "config" ? "ajustes.editar" : view === "cotizaciones" ? "cotizacion.ver" : view === "caja" ? "caja.usar" : null;
+    : view === "usuarios" ? "usuarios.gestionar" : view === "config" ? "ajustes.editar" : view === "cotizaciones" ? "cotizacion.ver" : view === "caja" ? "caja.usar" : view === "pedidos" ? "pedido.ver" : null;
   if (needed && !exigir(needed, "abrir " + view)) view = "inventario";
   if (!puede("inventario.ver") && view === "inventario") return;
   S.view = view;
@@ -20,6 +20,7 @@ function renderAll() {
   else if (S.view === "venta") renderVenta();
   else if (S.view === "resumen") renderResumen();
   else if (S.view === "ventas") renderVentas();
+  else if (S.view === "pedidos") renderPedidos();
   else if (S.view === "cotizaciones") renderCotizaciones();
   else if (S.view === "caja") renderCaja();
   else if (S.view === "reportes") renderReportes();
