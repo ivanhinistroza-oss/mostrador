@@ -1,4 +1,4 @@
-const CACHE_NAME = "mostrador-cimiento-pedidos-20261124b";
+const CACHE_NAME = "mostrador-cimiento-pedidos-20261124c";
 // librerías de Firebase: se guardan para poder abrir la app sin internet
 const SDK_ORIGIN = "https://www.gstatic.com";
 const APP_FILES = [
