@@ -40,7 +40,7 @@ function saleVariantPickerHtml(p) {
   const variants = p.variantes || [];
   return `<div class="sale-variant-picker"><div class="sale-variant-head"><div><b>${esc(p.nombre)}</b><small>Elige el color o la talla para agregarla.</small></div><button type="button" class="btn ghost" data-sale-variants-close>Cerrar</button></div><div class="sale-variants">${variants.map(v=>{
     const label=[v.color,v.talla].filter(Boolean).join(" / ")||"Opción";
-    const dot=v.color?`<i class="sale-color-dot" style="--swatch:${saleColorHex(v.color)}" aria-hidden="true"></i>`:"<i class="sale-color-dot neutral" aria-hidden="true">·</i>";
+    const dot=v.color?`<i class="sale-color-dot" style="--swatch:${saleColorHex(v.color)}" aria-hidden="true"></i>`:'<i class="sale-color-dot neutral" aria-hidden="true">·</i>';
     return `<button type="button" class="sale-variant-option" data-addline="${esc(p.id)}" data-variant="${esc(v.id)}">${dot}<span><b>${esc(label)}</b><small>Stock ${qty(v.stock)}</small></span><strong>${money(v.precio ?? p.precio)}</strong><span class="sale-variant-plus">+</span></button>`;
   }).join("")}</div></div>`;
 }
