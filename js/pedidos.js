@@ -35,7 +35,7 @@ function renderPedidos() {
       ${rows.length ? rows.map(p => `<tr data-pedido-open="${esc(p.id)}"><td><b>${esc(p.codigo)}</b><small class="pedido-created">${fmtDate(p.creadoEn)}</small></td><td>${esc(p.cliente)}<small class="pedido-created">${esc(p.celular)}</small></td><td>${(p.items || []).length} ${(p.items || []).length === 1 ? "producto" : "productos"}</td><td>${esc(p.modalidadEntrega || "—")}</td><td>${p.fechaEstimada ? new Date(p.fechaEstimada + "T12:00:00").toLocaleDateString("es-PE") : "—"}</td><td><span class="pedido-status ${estadoClase(p.estado)}">${esc(p.estado)}</span></td><td><button class="btn ghost pedido-open-btn" data-pedido-open="${esc(p.id)}">Ver</button></td></tr>`).join("") : `<tr><td colspan="7"><div class="pedidos-empty">${S.pedidos.length ? "No hay pedidos que coincidan con estos filtros." : "Todavía no hay pedidos. Registra el primero para empezar a seguirlo."}</div></td></tr>`}
     </tbody></table></div>
   </div>`;
-  $("#pedido-nuevo").onclick = abrirNuevoPedido;
+  $("#pedido-nuevo").onclick = () => abrirNuevoPedido();
   $("#pedido-q").oninput = e => { pedidoQ = e.target.value; const pos=e.target.selectionStart; renderPedidos(); $("#pedido-q").focus(); $("#pedido-q").setSelectionRange(pos,pos); };
   $("#pedido-f-estado").onchange = e => { pedidoEstadoFiltro = e.target.value; renderPedidos(); };
   $("#pedido-f-fecha").onchange = e => { pedidoFechaFiltro = e.target.value; renderPedidos(); };
@@ -52,19 +52,23 @@ function pedidoDialogo(id, titulo, html, clase = "") {
   return d;
 }
 const pedidoCodigo = () => "PED-" + new Date().toISOString().slice(2,10).replaceAll("-", "") + "-" + uid().toUpperCase().slice(-5);
-function abrirNuevoPedido() {
-  if (!exigir("pedido.crear", "crear pedidos")) return;
-  pedidoLineasDraft = [];
+function abrirNuevoPedido(edit = null) {
+  if (edit ? !exigir("pedido.editar", "editar pedidos") : !exigir("pedido.crear", "crear pedidos")) return;
+  pedidoLineasDraft = edit ? (edit.items || []).map(x => ({ ...x })) : [];
+  const val = k => esc(edit?.[k] || "");
+  const modalidades = ["Recojo en tienda", "Envío a domicilio", "Recojo coordinado"];
+  if (edit?.modalidadEntrega && !modalidades.includes(edit.modalidadEntrega)) modalidades.push(edit.modalidadEntrega);
   const products = [...S.products].sort((a,b) => ordenEs.compare(a.nombre,b.nombre));
   const options = products.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}${p.variantes?.length ? " · con tallas y colores" : ""}</option>`).join("");
-  const d = pedidoDialogo("pedido-nuevo-dialog", "Nuevo pedido", `<form id="pedido-form" class="pedido-form">
-    <div class="pedido-form-grid"><label class="f"><span>Nombre del cliente</span><input name="cliente" autocomplete="name" required maxlength="120" placeholder="Nombre y apellido"></label><label class="f"><span>Celular / WhatsApp</span><input name="celular" type="tel" autocomplete="tel" required maxlength="24" placeholder="Ej. 987 654 321"></label></div>
+  const d = pedidoDialogo("pedido-nuevo-dialog", edit ? `Editar pedido ${esc(edit.codigo)}` : "Nuevo pedido", `<form id="pedido-form" class="pedido-form">
+    <div class="pedido-form-grid"><label class="f"><span>Nombre del cliente</span><input name="cliente" autocomplete="name" required maxlength="120" placeholder="Nombre y apellido" value="${val("cliente")}"></label><label class="f"><span>Celular / WhatsApp</span><input name="celular" type="tel" autocomplete="tel" required maxlength="24" placeholder="Ej. 987 654 321" value="${val("celular")}"></label></div>
     <div class="pedido-product-picker"><label class="f"><span>Producto</span><select id="pedido-producto"><option value="">Selecciona un producto</option>${options}</select></label><label class="f"><span>Talla y color</span><select id="pedido-variante" disabled><option value="">Selecciona una combinación</option></select></label><label class="f pedido-cantidad"><span>Cantidad</span><input id="pedido-cantidad" type="number" min="1" step="1" value="1" inputmode="numeric"></label><button type="button" id="pedido-agregar-linea" class="btn">Agregar</button></div>
     <div id="pedido-lineas" class="pedido-lines"><p class="muted">Agrega uno o varios productos al pedido.</p></div>
-    <div class="pedido-form-grid"><label class="f"><span>Modalidad de entrega</span><select name="modalidadEntrega"><option>Recojo en tienda</option><option>Envío a domicilio</option><option>Recojo coordinado</option></select></label><label class="f"><span>Fecha estimada de entrega</span><input name="fechaEstimada" type="date" required min="${new Date().toISOString().slice(0,10)}"></label></div>
-    <label class="f"><span>Observaciones</span><textarea name="observaciones" rows="3" maxlength="800" placeholder="Indicaciones del pedido"></textarea></label><p class="warnline" id="pedido-form-error" role="alert" hidden></p>
-    <div class="pedido-dialog-actions"><button type="button" class="btn ghost" data-pedido-close>Cancelar</button><button class="btn primary" type="submit">Guardar pedido</button></div>
+    <div class="pedido-form-grid"><label class="f"><span>Modalidad de entrega</span><select name="modalidadEntrega">${modalidades.map(m => `<option ${edit?.modalidadEntrega === m ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label><label class="f"><span>Fecha estimada de entrega</span><input name="fechaEstimada" type="date" required ${edit ? `value="${val("fechaEstimada")}"` : `min="${new Date().toISOString().slice(0,10)}"`}></label></div>
+    <label class="f"><span>Observaciones</span><textarea name="observaciones" rows="3" maxlength="800" placeholder="Indicaciones del pedido">${val("observaciones")}</textarea></label><p class="warnline" id="pedido-form-error" role="alert" hidden></p>
+    <div class="pedido-dialog-actions"><button type="button" class="btn ghost" data-pedido-close>Cancelar</button><button class="btn primary" type="submit">${edit ? "Guardar cambios" : "Guardar pedido"}</button></div>
   </form>`);
+  d.querySelector('[data-pedido-close]:not(.pedido-dialog-head *)')?.addEventListener("click", () => d.close());
   const form = $("#pedido-form", d), productSel = $("#pedido-producto",d), variantSel=$("#pedido-variante",d);
   const renderLines = () => { $("#pedido-lineas",d).innerHTML = pedidoLineasDraft.length ? pedidoLineasDraft.map((x,i)=>`<div class="pedido-line"><span><b>${esc(x.nombre)}</b><small>${esc([x.talla,x.color].filter(Boolean).join(" · ") || x.unidad)}</small></span><label>Cant. <input type="number" min="1" step="1" value="${x.cant}" data-pedido-line-qty="${i}" aria-label="Cantidad para ${esc(x.nombre)}"></label><button type="button" class="btn ghost danger-text" data-pedido-line-remove="${i}">Quitar</button></div>`).join("") : `<p class="muted">Agrega uno o varios productos al pedido.</p>`; };
   productSel.onchange = () => {
@@ -87,6 +91,14 @@ function abrirNuevoPedido() {
     if(!(db&&fb?.F&&fb.negocioId)){err.textContent="Para guardar pedidos y activar el enlace privado, abre Mostrador conectado a Cimiento.";err.hidden=false;return;}
     if(!pedidoLineasDraft.length){err.textContent="Agrega al menos un producto.";err.hidden=false;return;}
     const fd=new FormData(form), save=form.querySelector('[type="submit"]'); save.disabled=true;
+    if (edit) {
+      try {
+        const patch={cliente:String(fd.get("cliente")).trim(),celular:String(fd.get("celular")).trim(),items:pedidoLineasDraft.map(x=>({...x})),modalidadEntrega:String(fd.get("modalidadEntrega")),fechaEstimada:String(fd.get("fechaEstimada")),observaciones:String(fd.get("observaciones")||"").trim()};
+        const ok=await pedidoEventoGuardar(edit,"Pedido editado",patch);
+        if(ok){d.close();toast("Cambios guardados.");verPedido(edit.id);} else save.disabled=false;
+      } catch(ex){ err.textContent=ex.message||"No se pudieron guardar los cambios.";err.hidden=false;save.disabled=false; }
+      return;
+    }
     try {
       const token=pedidoTokenNuevo(), now=new Date().toISOString(), id=uid()+uid();
       const actor=usuarioActual(), pedido={codigo:pedidoCodigo(),cliente:String(fd.get("cliente")).trim(),celular:String(fd.get("celular")).trim(),items:pedidoLineasDraft.map(x=>({...x})),modalidadEntrega:String(fd.get("modalidadEntrega")),fechaEstimada:String(fd.get("fechaEstimada")),observaciones:String(fd.get("observaciones")||"").trim(),estado:"Recibido",creadoEn:now,vendedorId:actor?.id||sessionId||"local",vendedorNombre:actor?.nombre||"Equipo",token,tokenHash:await pedidoSha256(token)};
@@ -118,7 +130,11 @@ async function verPedido(id) {
     <div class="pedido-detail-block"><div class="pedido-section-heading"><h3>Avance del pedido</h3><span>${(pedidoEventos||[]).length} cambios</span></div><div id="pedido-historial" class="pedido-history"><span class="muted">Cargando historial…</span></div></div>
     <div class="pedido-detail-block"><div class="pedido-section-heading"><h3>Fotografías</h3><label class="btn pedido-photo-pick">＋ Agregar foto<input id="pedido-foto-file" type="file" accept="image/*" hidden></label></div><div id="pedido-fotos" class="pedido-photos"><span class="muted">Cargando fotos…</span></div></div>
     <div class="pedido-share"><a class="btn" target="_blank" rel="noreferrer" href="https://wa.me/${pedidoTelefonoWhatsApp(p.celular)}?text=${encodeURIComponent(`Hola ${p.cliente}, sigue tu pedido ${p.codigo} aquí: ${pedidoPortalUrl(p)}`)}">Compartir por WhatsApp</a><button class="btn ghost" id="pedido-link-copy">Copiar enlace</button><div id="pedido-qr" class="pedido-qr"><span class="muted">Generando QR…</span></div></div>
-    <div class="pedido-detail-actions"><label class="f"><span>Actualizar estado</span><select id="pedido-next-state">${PEDIDO_ESTADOS.map(x=>`<option ${x===p.estado?"selected":""}>${x}</option>`).join("")}</select></label><button class="btn primary" id="pedido-save-state">Guardar estado</button></div><div class="pedido-detail-actions"><label class="f"><span>Fecha estimada de entrega</span><input id="pedido-next-date" type="date" value="${esc(p.fechaEstimada||"")}"></label><button class="btn" id="pedido-save-date">Actualizar fecha</button></div></div>`,`pedido-detail-dialog`);
+    <div class="pedido-detail-actions"><label class="f"><span>Actualizar estado</span><select id="pedido-next-state">${PEDIDO_ESTADOS.map(x=>`<option ${x===p.estado?"selected":""}>${x}</option>`).join("")}</select></label><button class="btn primary" id="pedido-save-state">Guardar estado</button></div><div class="pedido-detail-actions"><label class="f"><span>Fecha estimada de entrega</span><input id="pedido-next-date" type="date" value="${esc(p.fechaEstimada||"")}"></label><button class="btn" id="pedido-save-date">Actualizar fecha</button></div>
+    ${puede("pedido.editar")||puede("pedido.eliminar")?`<div class="pedido-dialog-actions pedido-admin-actions">${puede("pedido.eliminar")?`<button class="btn danger" id="pedido-eliminar">Eliminar pedido</button>`:""}${puede("pedido.editar")?`<button class="btn" id="pedido-editar">Editar pedido</button>`:""}</div>`:""}</div>`,`pedido-detail-dialog`);
+  const editBtn=$("#pedido-editar",d), delBtn=$("#pedido-eliminar",d);
+  if(editBtn) editBtn.onclick=()=>{d.close();abrirNuevoPedido(p);};
+  if(delBtn) delBtn.onclick=()=>pedidoEliminar(p,d);
   $("#pedido-link-copy",d).onclick=async()=>{try{await navigator.clipboard.writeText(pedidoPortalUrl(p));toast("Enlace copiado.");}catch{toast("No se pudo copiar el enlace.");}};
   $("#pedido-save-state",d).onclick=async()=>{const next=$("#pedido-next-state",d).value;if(next===p.estado)return toast("El pedido ya tiene ese estado.");try{const ok=await pedidoEventoGuardar(p,`Estado actualizado: ${p.estado} → ${next}`,{estado:next});if(ok){d.close();toast("Estado actualizado.");verPedido(id);}}catch(e){toast(e.message||"No se pudo guardar el cambio.");}};
   $("#pedido-save-date",d).onclick=async()=>{const next=$("#pedido-next-date",d).value;if(!next)return toast("Elige una fecha estimada.");if(next===p.fechaEstimada)return toast("La fecha estimada no ha cambiado.");try{const ok=await pedidoEventoGuardar(p,`Fecha estimada actualizada: ${next}`,{fechaEstimada:next});if(ok){d.close();toast("Fecha de entrega actualizada.");verPedido(id);}}catch(e){toast(e.message||"No se pudo actualizar la fecha.");}};
@@ -130,6 +146,24 @@ async function verPedido(id) {
   photos.innerHTML=pedidoFotos.length?pedidoFotos.map(ph=>`<figure class="pedido-photo"><img src="${esc(ph.imagen)}" alt="${esc(ph.titulo||"Foto del pedido")}"><figcaption>${esc(ph.titulo||"Foto del pedido")} <span class="pedido-status ${ph.publicada?"ok":"warn"}">${ph.publicada?"Visible al cliente":"Solo equipo"}</span><button class="btn ghost" data-foto-publicar="${esc(ph.id)}" data-publicada="${ph.publicada?"true":"false"}">${ph.publicada?"Ocultar":"Publicar"}</button></figcaption></figure>`).join(""):`<p class="muted">No se han subido fotos para este pedido.</p>`;
   photos.onclick=async e=>{const b=e.target.closest("[data-foto-publicar]");if(!b)return;const photo=pedidoFotos.find(x=>x.id===b.dataset.fotoPublicar);if(!photo)return;try{const published=b.dataset.publicada!=="true";await pedidoFotoVisibilidad(p,photo,published);verPedido(id);}catch(ex){toast(ex.message||"No se pudo actualizar la foto.");}};
   await pedidoQr(p, $("#pedido-qr",d));
+}
+async function pedidoEliminar(p,d){
+  if(!exigir("pedido.eliminar","eliminar pedidos"))return;
+  if(!confirm(`¿Eliminar el pedido ${p.codigo} de ${p.cliente}?\n\nSe borran también su historial y sus fotos, y el enlace del cliente deja de funcionar. No se puede deshacer.`))return;
+  const btn=$("#pedido-eliminar",d); if(btn) btn.disabled=true;
+  try{
+    if(db&&fb?.F&&fb.negocioId){
+      const F=fb.F, base=`negocios/${fb.negocioId}/`;
+      const [ev,ph]=db.pedidosRelacionados?await Promise.all([db.pedidosRelacionados("pedido_eventos",p.id),db.pedidosRelacionados("pedidos_fotos",p.id)]):[[],[]];
+      const b=F.writeBatch(fb.fs);
+      ph.forEach(x=>b.delete(F.doc(fb.fs,base+"pedidos_fotos/"+x.id)));
+      ev.forEach(x=>b.delete(F.doc(fb.fs,base+"pedido_eventos/"+x.id)));
+      b.delete(F.doc(fb.fs,base+"pedidos/"+p.id));
+      await b.commit();
+    } else { mem.pedidos.delete(p.id); syncMem(); }
+    S.pedidos=S.pedidos.filter(x=>x.id!==p.id); pedidoSeleccionado=null;
+    d.close(); renderPedidos(); toast("Pedido eliminado.");
+  }catch(ex){ toast(ex.message||"No se pudo eliminar el pedido."); if(btn) btn.disabled=false; }
 }
 async function pedidoFotoVisibilidad(p,photo,publicada){
   if(!exigir("pedido.foto","publicar fotos de pedidos"))return;
