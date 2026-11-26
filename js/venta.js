@@ -218,9 +218,7 @@ async function emitNote(btn) {
     cliente: draft.cliente.trim(), doc: draft.doc.trim(), docTipo: docTipo(draft.doc), obs: draft.obs.trim(), pago: draft.pago || PAGO_INICIAL,
     items, total: totalCobro, ...(esEfectivo ? { recibido: round2(recibido), vuelto: round2(recibido - totalCobro) } : {}), estado: "emitida",
   };
-  const detalle = items.map(i => `• ${i.nombre} ×${qty(i.cant)}`).join("\n");
-  const pagoDetalle = esEfectivo ? `\nRecibido: ${money(recibido)}\nVuelto: ${money(recibido - totalCobro)}` : "";
-  if (!confirm(`Revisa la venta antes de emitir\n\n${detalle}\n\nTotal: ${money(totalCobro)}\nMedio de pago: ${note.pago}${pagoDetalle}\n\n¿Emitir esta venta?`)) return;
+  // sin ventana de confirmación: se emite al tocar el botón, que se bloquea para no vender dos veces
   btn.disabled = true;
   try {
     await flushPendingStock();

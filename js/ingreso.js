@@ -130,8 +130,6 @@ async function ingresoRegistrar(btn) {
   if (mal) { mal.focus(); return toast("Revisa los números: usa cifras como 12 o 4.50."); }
   const t = ingresoTotales();
   if (!t.unidades) return toast("Escribe cuántas unidades llegaron.");
-  const resumen = [...new Set(t.lineas.map(l => l.p))].map(p => `• ${p.nombre}: +${qty(t.lineas.filter(l => l.p === p).reduce((a, l) => a + l.cant, 0))}`).join("\n");
-  if (!confirm(`¿Sumar ${qty(t.unidades)} unidades al stock?\n\n${resumen}`)) return;
   ingresoEnviando = true; btn.disabled = true;
   try {
     await flushPendingStock();
