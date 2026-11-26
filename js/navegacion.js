@@ -1,7 +1,7 @@
-const VIEWS = ["inventario", "venta", "pedidos", "notas", "caja", "cotizaciones", "ventas", "reportes", "resumen", "usuarios", "config"];
+const VIEWS = ["inventario", "ingreso", "venta", "pedidos", "notas", "caja", "cotizaciones", "ventas", "reportes", "resumen", "usuarios", "config"];
 function go(view) {
   const needed = view === "ventas" || view === "resumen" || view === "reportes" ? "estadisticas.ver"
-    : view === "usuarios" ? "usuarios.gestionar" : view === "config" ? "ajustes.editar" : view === "cotizaciones" ? "cotizacion.ver" : view === "caja" ? "caja.usar" : view === "pedidos" ? "pedido.ver" : null;
+    : view === "usuarios" ? "usuarios.gestionar" : view === "config" ? "ajustes.editar" : view === "cotizaciones" ? "cotizacion.ver" : view === "caja" ? "caja.usar" : view === "pedidos" ? "pedido.ver" : view === "ingreso" ? "stock.ajustar" : null;
   if (needed && !exigir(needed, "abrir " + view)) view = "inventario";
   if (!puede("inventario.ver") && view === "inventario") return;
   S.view = view;
@@ -18,6 +18,7 @@ function renderAll() {
   $("#bizName").textContent = S.settings.negocio;
   if (S.view === "inventario") renderInventario();
   else if (S.view === "venta") renderVenta();
+  else if (S.view === "ingreso") renderIngreso();
   else if (S.view === "resumen") renderResumen();
   else if (S.view === "ventas") renderVentas();
   else if (S.view === "pedidos") renderPedidos();

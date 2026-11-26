@@ -24,6 +24,7 @@
       </div>
       <nav class="tabs" role="tablist">
         <button role="tab" data-view="inventario" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v12H3zM3 8l2-4h14l2 4M9 12h6"/></svg><span>Inventario</span></button>
+        <button role="tab" data-view="ingreso" class="tab-sub" aria-selected="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg><span>Ingreso de mercadería</span></button>
         <button role="tab" data-view="venta" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.5h11.6L21 8H6M9 19a1 1 0 1 0 0 .01M17 19a1 1 0 1 0 0 .01"/></svg><span>Nueva venta</span></button>
         <button role="tab" data-view="pedidos" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><span>Pedidos</span></button>
         <button role="tab" data-view="notas" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21zM9 8h6M9 12h6M9 16h4"/></svg><span>Notas</span></button>
@@ -47,6 +48,7 @@
   <section id="v-inventario"></section>
   <section id="v-venta" hidden></section>
   <section id="v-pedidos" hidden></section>
+  <section id="v-ingreso" hidden></section>
   <section id="v-notas" hidden></section>
   <section id="v-caja" hidden></section>
   <section id="v-cotizaciones" hidden></section>
@@ -57,78 +59,92 @@
   <section id="v-config" hidden></section>
 </main>
 
-<dialog id="dlg">
+<dialog id="dlg" class="pdlg">
   <form id="pform" method="dialog" novalidate>
-    <h2 id="pformTitle">Nuevo producto</h2>
-    <div class="photo-field">
-      <span class="thumb lg" id="p-foto-prev"></span>
-      <div class="btns">
-        <button type="button" class="btn" id="p-foto-pick">Agregar foto</button>
-        <button type="button" class="btn ghost" id="p-foto-rm" hidden>Quitar</button>
-        <small>Opcional. Se guarda en tamaño pequeño para que la app siga rápida.</small>
-      </div>
-      <input type="file" id="p-foto-file" accept="image/*" hidden>
-    </div>
-    <label class="f"><span>Nombre del producto</span><input type="text" id="p-nombre" required autocomplete="off" placeholder="Ej. Arroz extra 5 kg" aria-describedby="p-nombre-aviso"></label>
-    <p id="p-nombre-aviso" class="warnline" role="alert" hidden></p>
-    <div id="p-similar" class="similar" hidden></div>
-    <div class="grid2">
-      <div class="cat-campo">
-        <label class="f"><span>Categoría</span><input type="text" id="p-categoria" autocomplete="off" placeholder="Toca una de abajo o escribe una nueva"></label>
-        <div class="cat-chips" id="p-cats" role="group" aria-label="Categorías que ya usas" hidden></div>
-      </div>
-      <label class="f"><span>Código / SKU</span><input type="text" id="p-codigo" autocomplete="off" placeholder="Opcional"></label>
-    </div>
-    <div class="cod-tools">
-      <button type="button" class="btn" id="p-cod-crear">Crear código</button>
-      <button type="button" class="btn" id="p-cod-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button>
-      <div class="cod-vista" id="p-cod-vista" hidden></div>
-    </div>
-    <div class="grid3">
-      <label class="f"><span>Precio de venta</span><input type="number" id="p-precio" min="0" step="0.01" inputmode="decimal"></label>
-      <label class="f"><span>Stock actual</span><input type="number" id="p-stock" step="1" inputmode="decimal"></label>
-      <label class="f"><span>Stock mínimo</span><input type="number" id="p-minimo" min="0" step="1" inputmode="decimal"></label>
-    </div>
-    <div class="grid2">
-      <label class="f"><span>Costo de compra (opcional)</span><input type="number" id="p-costo" min="0" step="0.01" inputmode="decimal" placeholder="Lo que te cuesta cada unidad"></label>
-      <p class="muted costo-margen" id="p-margen" aria-live="polite"></p>
-    </div>
-    <details id="p-variations"><summary id="p-var-sum">Tallas y colores (opcional)</summary>
-      <div class="var-pick">
-        <div>
-          <div class="var-pick-head"><span>Tallas</span><div class="var-sets" id="p-tallaset" role="group" aria-label="Tipo de talla"></div></div>
-          <div class="pick-chips" id="p-tallas" role="group" aria-label="Tallas"></div>
-          <div class="pick-other"><input type="text" id="p-talla-otra" placeholder="Otra talla" autocomplete="off"><button type="button" class="btn" data-pick-add="talla">Agregar</button></div>
-        </div>
-        <div>
-          <div class="var-pick-head"><span>Colores</span></div>
-          <div class="pick-chips" id="p-colores" role="group" aria-label="Colores"></div>
-          <div class="pick-other"><input type="text" id="p-color-otro" placeholder="Otro color" autocomplete="off"><button type="button" class="btn" data-pick-add="color">Agregar</button></div>
-        </div>
-        <div>
-          <div class="var-edit head" id="p-var-head" hidden><span>Combinación</span><span>Stock</span><span>Precio</span><span>Código</span><span></span></div>
-          <div class="var-rows" id="p-variants"></div>
-          <button type="button" class="btn ghost" id="p-addvariant" style="margin-top:8px">+ Otra combinación a mano</button>
-          <div class="var-cod-tools">
-            <button type="button" class="btn" id="p-var-crear">Crear los códigos que faltan</button>
-            <button type="button" class="btn" id="p-var-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear códigos</button>
+    <header class="pf-head">
+      <div><h2 id="pformTitle">Nuevo producto</h2><p>Los campos con * son obligatorios. Lo demás puedes completarlo después.</p></div>
+      <button type="button" class="pf-close" id="p-close" aria-label="Cerrar sin guardar">✕</button>
+    </header>
+    <div class="pf-body">
+      <section class="pf-sec">
+        <h3><span>1</span>Datos del producto</h3>
+        <div class="pf-main">
+          <div class="photo-field">
+            <span class="thumb lg" id="p-foto-prev"></span>
+            <div class="btns">
+              <button type="button" class="btn" id="p-foto-pick">Agregar foto</button>
+              <button type="button" class="btn ghost" id="p-foto-rm" hidden>Quitar</button>
+            </div>
+            <input type="file" id="p-foto-file" accept="image/*" hidden>
+          </div>
+          <div class="pf-fields">
+            <label class="f"><span>Nombre del producto *</span><input type="text" id="p-nombre" required autocomplete="off" placeholder="Ej. Polo algodón cuello redondo" aria-describedby="p-nombre-aviso"></label>
+            <p id="p-nombre-aviso" class="warnline" role="alert" hidden></p>
+            <div id="p-similar" class="similar" hidden></div>
+            <div class="cat-campo">
+              <label class="f"><span>Categoría</span><input type="text" id="p-categoria" autocomplete="off" placeholder="Toca una de abajo o escribe una nueva"></label>
+              <div class="cat-chips" id="p-cats" role="group" aria-label="Categorías que ya usas" hidden></div>
+            </div>
           </div>
         </div>
-      </div>
-    </details>
-    <label class="check" id="p-web-row" hidden><input type="checkbox" id="p-web"> 🌐 Mostrar en la tienda web</label>
-    <label class="f"><span>Unidad</span>
-      <select id="p-unidad"><option>und</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>caja</option><option>paquete</option><option>docena</option><option>m</option></select>
-    </label>
-    <label class="f"><span>IGV</span>
-      <select id="p-igv"><option value="gravado">Gravado (con IGV)</option><option value="exonerado">Exonerado</option><option value="inafecto">Inafecto</option></select>
-    </label>
-    <p id="p-err" class="warnline" hidden></p>
-    <div class="actions">
+        <div class="pf-codigo">
+          <label class="f"><span>Código de barras / SKU</span><input type="text" id="p-codigo" autocomplete="off" placeholder="Opcional"></label>
+          <div class="cod-tools">
+            <button type="button" class="btn" id="p-cod-crear">Crear código</button>
+            <button type="button" class="btn" id="p-cod-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button>
+          </div>
+          <div class="cod-vista" id="p-cod-vista" hidden></div>
+        </div>
+      </section>
+      <section class="pf-sec">
+        <h3><span>2</span>Precio y stock</h3>
+        <div class="pf-grid4">
+          <label class="f"><span>Precio de venta *</span><input type="number" id="p-precio" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+          <label class="f"><span>Costo de compra</span><input type="number" id="p-costo" min="0" step="0.01" inputmode="decimal" placeholder="Opcional"></label>
+          <label class="f"><span>Stock actual</span><input type="number" id="p-stock" step="1" inputmode="decimal" placeholder="0"></label>
+          <label class="f"><span>Avisar si baja de</span><input type="number" id="p-minimo" min="0" step="1" inputmode="decimal" placeholder="0"></label>
+        </div>
+        <p class="muted costo-margen" id="p-margen" aria-live="polite"></p>
+        <div class="pf-grid4">
+          <label class="f"><span>Se vende por</span>
+            <select id="p-unidad"><option>und</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>caja</option><option>paquete</option><option>docena</option><option>m</option></select>
+          </label>
+          <label class="f"><span>IGV</span>
+            <select id="p-igv"><option value="gravado">Gravado (con IGV)</option><option value="exonerado">Exonerado</option><option value="inafecto">Inafecto</option></select>
+          </label>
+        </div>
+        <label class="check" id="p-web-row" hidden><input type="checkbox" id="p-web"> 🌐 Mostrar en la tienda web</label>
+      </section>
+      <details id="p-variations" class="pf-sec pf-var"><summary><h3><span>3</span><b id="p-var-sum">Tallas y colores (opcional)</b></h3><small>Si el producto viene en varias tallas o colores, cada combinación lleva su propio stock.</small></summary>
+        <div class="var-pick">
+          <div class="var-pick-box">
+            <div class="var-pick-head"><span>Tallas</span><div class="var-sets" id="p-tallaset" role="group" aria-label="Tipo de talla"></div></div>
+            <div class="pick-chips" id="p-tallas" role="group" aria-label="Tallas"></div>
+            <div class="pick-other"><input type="text" id="p-talla-otra" placeholder="Otra talla" autocomplete="off"><button type="button" class="btn" data-pick-add="talla">Agregar</button></div>
+          </div>
+          <div class="var-pick-box">
+            <div class="var-pick-head"><span>Colores</span></div>
+            <div class="pick-chips" id="p-colores" role="group" aria-label="Colores"></div>
+            <div class="pick-other"><input type="text" id="p-color-otro" placeholder="Otro color" autocomplete="off"><button type="button" class="btn" data-pick-add="color">Agregar</button></div>
+          </div>
+          <div class="var-tabla">
+            <div class="var-edit head" id="p-var-head" hidden><span>Combinación</span><span>Stock</span><span>Precio</span><span>Código</span><span></span></div>
+            <div class="var-rows" id="p-variants"></div>
+            <div class="var-cod-tools">
+              <button type="button" class="btn ghost" id="p-addvariant">+ Otra combinación a mano</button>
+              <button type="button" class="btn" id="p-var-crear">Crear los códigos que faltan</button>
+              <button type="button" class="btn" id="p-var-scan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear códigos</button>
+            </div>
+          </div>
+        </div>
+      </details>
+      <p id="p-err" class="warnline" hidden></p>
+    </div>
+    <div class="actions pf-foot">
       <button type="button" class="btn danger" id="p-del" hidden>Eliminar</button>
       <div class="r">
         <button type="button" class="btn ghost" id="p-cancel">Cancelar</button>
-        <button type="submit" class="btn primary" id="p-save">Guardar</button>
+        <button type="submit" class="btn primary" id="p-save">Guardar producto</button>
       </div>
     </div>
   </form>
@@ -191,6 +207,7 @@
 <script src="./js/ventas.js"></script>
 <script src="./js/caja.js"></script>
 <script src="./js/pedidos.js"></script>
+<script src="./js/ingreso.js"></script>
 <script src="./js/navegacion.js"></script>
 <script src="./js/firebase.js"></script>
 <script src="./js/web.js"></script>

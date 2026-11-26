@@ -190,7 +190,7 @@ function addVariantEditor(v = {}, auto = false) {
   const name = [v.talla, v.color].filter(Boolean).join(" / ");
   row.innerHTML = `<div class="var-name">${v.color ? swatch(v.color) : ""}<span class="var-label">${esc(name)}</span><input type="hidden" data-vfield="talla" value="${esc(v.talla || "")}"><input type="hidden" data-vfield="color" value="${esc(v.color || "")}"></div>
     <input data-vfield="stock" type="number" min="0" step="1" inputmode="numeric" value="${n2(v.stock)}" aria-label="Stock ${esc(name)}">
-    <input data-vfield="precio" type="number" min="0" step="0.01" inputmode="decimal" value="${v.precio == null ? "" : n2(v.precio)}" placeholder="Igual" aria-label="Precio ${esc(name)} (vacío = precio del producto)">
+    <input data-vfield="precio" type="number" min="0" step="0.01" inputmode="decimal" value="${v.precio == null ? "" : n2(v.precio)}" placeholder="Mismo" title="Vacío = mismo precio del producto" aria-label="Precio ${esc(name)} (vacío = precio del producto)">
     <input type="text" data-vfield="codigo" value="${esc(v.codigo || "")}" placeholder="Código (opcional)" aria-label="Código ${esc(name)}">
     <button type="button" class="x" data-rmvariant aria-label="Quitar ${esc(name || "combinación")}">✕</button>`;
   $("#p-variants").append(row);
@@ -300,6 +300,7 @@ function renderCatChips() {
     <div class="pick-chips">${lista.map(c => `<button type="button" data-cat="${esc(c.nombre)}" aria-pressed="${c === elegida}" title="${c.n} producto${c.n === 1 ? "" : "s"}">${esc(c.nombre)} <span class="n">${c.n}</span></button>`).join("")}${mas}</div>`;
 }
 $("#p-cancel").onclick = () => dlg.close();
+$("#p-close").onclick = () => dlg.close();
 function showFoto() {
   const prev = $("#p-foto-prev");
   prev.innerHTML = editFoto ? `<img src="${esc(editFoto)}" alt="Foto del producto">` : `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>`;

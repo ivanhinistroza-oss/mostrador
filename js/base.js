@@ -225,6 +225,7 @@ function aplicarPermisosUI() {
     .forEach(button => button.hidden = !admin);
   document.querySelector('[data-view="config"]').hidden = !puede("ajustes.editar");
   document.querySelector('[data-view="pedidos"]').hidden = !puede("pedido.ver");
+  document.querySelector('[data-view="ingreso"]').hidden = !puede("stock.ajustar");
   $("#userMenu").hidden = false;
   const user = usuarioActual();
   const role = user?.rol === "admin" ? "Administrador" : "Vendedor";

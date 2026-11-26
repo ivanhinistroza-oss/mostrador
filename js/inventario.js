@@ -107,26 +107,26 @@ function renderInventario() {
   const focusId = document.activeElement && document.activeElement.id;
   el.innerHTML = `
     <div class="toolbar">
-      <h1 style="margin-right:auto">Inventario</h1>
+      <div class="rv-head" style="margin-right:auto"><h1>Inventario</h1><p class="rv-sub">Tus productos, su precio y cuánto stock queda</p></div>
+      <button class="btn" data-view="ingreso" ${puede("stock.ajustar") ? "" : "hidden"}>Ingreso de mercadería</button>
       <button class="btn" id="exportCsv" ${prods.length ? "" : "disabled"} ${puede("datos.exportar") ? "" : "hidden"}>Exportar Excel</button>
       <button class="btn" id="openLabels" ${prods.length ? "" : "disabled"} ${puede("producto.editar") ? "" : "hidden"}>Etiquetas</button>
       <button class="btn primary" id="addProd" ${puede("producto.crear") ? "" : "hidden"}>+ Producto</button>
     </div>
-    <div class="stats">
-      <div class="stat"><b>${prods.length}</b><span>Productos</span></div>
-      <div class="stat"><b>${cats}</b><span>Categorías</span></div>
-      <div class="stat"><b>${qty(units)}</b><span>Unidades en stock</span></div>
-      <div class="stat" ${puede("estadisticas.ver") ? "" : "hidden"}><b>${money(value)}</b><span>Valor a precio de venta</span></div>
-      <div class="stat ${low ? "warn" : ""}"><b>${low}</b><span>Por reponer</span></div>
+    <div class="inv-kpis">
+      <div><span>Productos</span><b>${prods.length}</b></div>
+      <div><span>Categorías</span><b>${cats}</b></div>
+      <div><span>Unidades en stock</span><b>${qty(units)}</b></div>
+      ${puede("estadisticas.ver") ? `<div><span>Valor a precio de venta</span><b>${money(value)}</b></div>` : ""}
+      <button type="button" class="${low ? "warn" : ""}" id="lowOnly" aria-pressed="${S.lowOnly}"><span>Por reponer</span><b>${low}</b><small>${S.lowOnly ? "Viendo solo estos · ver todos" : "Toca para ver solo estos"}</small></button>
     </div>
-    <div class="toolbar">
+    <div class="toolbar inv-tools">
       <input class="grow" type="search" id="invSearch" placeholder="Buscar por nombre, categoría o código" value="${esc(S.q)}">
       <button class="btn" id="invScan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button>
       <div class="seg" role="group" aria-label="Agrupar">
         <button data-group="categoria" aria-pressed="${S.group === "categoria"}">Por categoría</button>
         <button data-group="semejanza" aria-pressed="${S.group === "semejanza"}">Por semejanza</button>
       </div>
-      <button class="btn ${S.lowOnly ? "primary" : ""}" id="lowOnly" aria-pressed="${S.lowOnly}">Solo por reponer</button>
     </div>
     ${semejanzaGrande ? `<p class="muted" style="margin:-4px 0 14px;font-size:13.5px">«Por semejanza» funciona con listas de hasta ${SEMEJANZA_MAX} productos. Busca o filtra para reducir la lista; mientras tanto se muestran por categoría.</p>` : S.group === "semejanza" && list.length ? `<p class="muted" style="margin:-4px 0 14px;font-size:13.5px">Los productos se agrupan solos según lo parecido de sus nombres, sin importar la categoría que les pusiste.</p>` : ""}
     <div id="groups">
@@ -136,7 +136,7 @@ function renderInventario() {
         invVisibles.map(g => `
           <div class="group">
             <div class="group-head"><h2 ${g.quiet ? 'class="muted"' : ""}>${esc(g.label)}</h2><span class="count">${g.items.length} ${g.items.length === 1 ? "producto" : "productos"}</span></div>
-            <div class="list"><div class="row head" aria-hidden="true"><span>Producto</span><span class="r">Precio</span><span>Stock</span><span>Estado</span></div>${g.visibles.map(rowHtml).join("")}</div>
+            <div class="list"><div class="row head" aria-hidden="true"><span></span><span>Producto</span><span class="r">Precio</span><span>Stock</span><span>Estado</span></div>${g.visibles.map(rowHtml).join("")}</div>
           </div>`).join("") + (invFaltan ? `<div class="inv-mas"><span class="muted">Se muestran ${invLimite} de ${list.length} productos. Busca por nombre o código para ir directo.</span><button class="btn" id="invMas">Ver ${Math.min(INV_PAGINA, invFaltan)} más</button></div>` : "")}
     </div>
     </div>`;
@@ -151,10 +151,11 @@ const anyFoto = () => {
 function thumbHtml(p, size = "") {
   return `<span class="thumb ${size}" aria-hidden="true">${fotoOk(p) ? `<img src="${esc(p.foto)}" alt="" loading="lazy">` : esc((p.nombre || "?").trim().charAt(0))}</span>`;
 }
-// con al menos una foto en el inventario, todas las filas llevan su recuadro para que queden alineadas
+// cada fila empieza con su foto pequeña (o la inicial del nombre), así todas quedan alineadas
 function nameHtml(p, inner) {
-  return anyFoto() ? `<div class="name with-thumb">${thumbHtml(p)}<div>${inner}</div></div>` : `<div class="name">${inner}</div>`;
+  return `${thumbHtml(p, "sm")}<div class="name">${inner}</div>`;
 }
+const openStk = new Set(); // en el celular, productos con el contador de stock abierto
 // --- Tallas y colores ---
 const TALLAS = {
   Letras: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "Única"],
@@ -196,11 +197,11 @@ function varRowHtml(p, st, chip) {
   const bajas = vs.filter(v => n2(v.stock) <= n2(v.minimo ?? p.minimo)).length;
   if (st > 0) chip = bajas ? `<span class="chip low">${bajas} por reponer</span>` : "";
   const prices = vs.map(v => n2(v.precio ?? p.precio)), lo = Math.min(...prices), hi = Math.max(...prices);
-  return `<div class="row" data-id="${esc(p.id)}">
+  return `<div class="row var-row" data-id="${esc(p.id)}">
     ${nameHtml(p, `<button data-edit="${esc(p.id)}">${esc(p.nombre)}</button>
       <div class="meta">${S.group === "semejanza" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}<span>${vs.length} ${vs.length === 1 ? "variante" : "variantes"}</span></div>${colorTotalsHtml(p)}`)}
-    <div class="price">${lo === hi ? money(lo) : `<span style="white-space:nowrap">${money(lo)} –</span> <span style="white-space:nowrap">${money(hi)}</span>`}<div class="muted" style="font-size:12px">por ${esc(p.unidad || "und")}</div></div>
-    <button class="var-toggle" data-vtoggle="${esc(p.id)}" aria-expanded="${open}" aria-label="Ver stock por talla y color de ${esc(p.nombre)}"><b>${qty(st)}</b><span class="muted">${esc(p.unidad || "und")} · ${open ? "Ocultar" : "Ver tallas"}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="price">${lo === hi ? money(lo) : `<span style="white-space:nowrap">${money(lo)} –</span> <span style="white-space:nowrap">${money(hi)}</span>`}</div>
+    <button class="var-toggle ${st <= 0 ? "out" : bajas ? "low" : ""}" data-vtoggle="${esc(p.id)}" aria-expanded="${open}" aria-label="Ver stock por talla y color de ${esc(p.nombre)}"><b>${qty(st)}</b><span class="muted">${esc(p.unidad || "und")} · ${open ? "ocultar" : "tallas"}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="estado">${chip}</div>
     ${open ? `<div class="var-panel">${varDetailHtml(p)}${puede("producto.editar") ? `<button class="btn var-etq" data-etq-producto="${esc(p.id)}"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Imprimir etiquetas de este producto</button>` : ""}</div>` : ""}
   </div>`;
@@ -240,16 +241,20 @@ function rowHtml(p) {
   const st = totalStock(p), mn = n2(p.minimo);
   const chip = st <= 0 ? `<span class="chip out">Agotado</span>` : st <= mn ? `<span class="chip low">Reponer</span>` : "";
   if (p.variantes && p.variantes.length) return varRowHtml(p, st, chip);
-  return `<div class="row" data-id="${esc(p.id)}">
+  // en la computadora se ve el contador; en el celular, un número que se toca para abrir el contador
+  const edita = puede("stock.ajustar"), abierto = openStk.has(p.id), cls = st <= 0 ? "out" : st <= mn ? "low" : "";
+  const pill = `<b>${qty(st)}</b> ${esc(p.unidad || "und")}`;
+  return `<div class="row ${edita ? "stk-edita" : ""} ${abierto ? "stk-abierto" : ""}" data-id="${esc(p.id)}">
     ${nameHtml(p, `<button data-edit="${esc(p.id)}">${esc(p.nombre)}</button>
       <div class="meta">${S.group === "semejanza" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}${mn ? `<span>mín. ${qty(mn)}</span>` : ""}${p.ejemplo ? `<span class="chip ex">Ejemplo</span>` : ""}</div>`)}
-    <div class="price">${money(p.precio)}<div class="muted" style="font-size:12px">por ${esc(p.unidad || "und")}</div></div>
+    <div class="price">${money(p.precio)}</div>
+    ${edita ? `<button type="button" class="stk-pill ${cls}" data-stkopen="${esc(p.id)}" aria-expanded="${abierto}" aria-label="Cambiar el stock de ${esc(p.nombre)}">${pill}</button>
     <div class="counter">
-      ${puede("stock.ajustar") ? `      <button data-dec="${esc(p.id)}" aria-label="Restar uno a ${esc(p.nombre)}">−</button>` : ""}
-      ${puede("stock.ajustar")?`<input type="number" id="stk-${esc(p.id)}" data-stk="${esc(p.id)}" value="${st}" step="1" aria-label="Stock de ${esc(p.nombre)}">`:`<span>${qty(st)}</span>`}
-      ${puede("stock.ajustar")?`<button data-inc="${esc(p.id)}" aria-label="Sumar uno a ${esc(p.nombre)}">+</button>`:""}
+      <button data-dec="${esc(p.id)}" aria-label="Restar uno a ${esc(p.nombre)}">−</button>
+      <input type="number" id="stk-${esc(p.id)}" data-stk="${esc(p.id)}" value="${st}" step="1" aria-label="Stock de ${esc(p.nombre)}">
+      <button data-inc="${esc(p.id)}" aria-label="Sumar uno a ${esc(p.nombre)}">+</button>
       <span class="u">${esc(p.unidad || "und")}</span>
-    </div>
+    </div>` : `<span class="stk-pill fija ${cls}">${pill}</span>`}
     <div class="estado">${chip}</div>
   </div>`;
 }
@@ -359,6 +364,13 @@ document.addEventListener("click", e => {
   if (t.dataset.etqProducto) return abrirEtiquetas(t.dataset.etqProducto);
   if (t.id === "invScan") return abrirEscaner(c => { const m = inventarioCodigo(c); if (m) toast(m); return false; });
   if (t.dataset.edit) return openProduct(t.dataset.edit);
+  if (t.dataset.stkopen) {
+    const id = t.dataset.stkopen;
+    if (openStk.has(id)) openStk.delete(id); else openStk.add(id);
+    renderInventario();
+    const i = document.getElementById("stk-" + id); if (i && openStk.has(id)) i.focus();
+    return;
+  }
   if (t.dataset.vtoggle) { const id = t.dataset.vtoggle; if (openVar.has(id)) openVar.delete(id); else openVar.add(id); return renderInventario(); }
   if (t.id === "invMas") { invLimite += INV_PAGINA; return renderInventario(); }
   if (t.dataset.group) { S.group = t.dataset.group; invLimite = INV_PAGINA; store.set("mostrador.group", S.group); return renderInventario(); }
@@ -368,6 +380,7 @@ document.addEventListener("click", e => {
     const v = Math.round((n2(p.stock) + (t.dataset.inc ? 1 : -1)) * 1000) / 1000;
     setStockLocal(id, v);
     const inp = document.getElementById("stk-" + id); if (inp) inp.value = v;
+    const pill = document.querySelector(`[data-stkopen="${CSS.escape(id)}"] b`); if (pill) pill.textContent = qty(v);
     return;
   }
   if(t.dataset.vinc||t.dataset.vdec){const id=t.dataset.vinc||t.dataset.vdec,p=S.products.find(x=>x.id===id),v=p&&p.variantes.find(x=>x.id===t.dataset.variant);if(v){setVariantStock(id,v.id,Math.max(0,n2(v.stock)+(t.dataset.vinc?1:-1)));renderInventario();}return;}
