@@ -1147,3 +1147,30 @@ dialog.pdlg form{padding:0;gap:0;flex:1;min-height:0;display:flex;flex-direction
 }
 nav.tabs button.tab-sub span{white-space:nowrap}
 @media (min-width:900px){nav.tabs button.tab-sub{padding-left:28px;font-size:12.5px;gap:8px}}
+
+/* Menú lateral más grande y claro (2026-11-25): cada opción con su ícono en una pastilla y el subapartado unido a su sección */
+header.top{width:244px}
+header.top .wrap{height:100%;overflow-y:auto;gap:18px;padding:22px 14px 18px}
+main.wrap{width:calc(100% - 244px);margin-left:244px}
+nav.tabs{gap:3px}
+nav.tabs button{gap:12px;min-height:48px;padding:6px 10px;border-left:0;border-radius:10px;font:600 15px var(--f-body);color:var(--muted);transition:background .15s,color .15s}
+nav.tabs button svg{box-sizing:content-box;width:20px;height:20px;padding:7px;border-radius:9px;background:var(--surface-2);color:var(--muted);transition:background .15s,color .15s}
+nav.tabs button:hover{background:var(--surface-2);color:var(--fg)}
+nav.tabs button:hover svg{background:var(--surface);color:var(--fg)}
+nav.tabs button[aria-selected="true"]{background:var(--accent-soft);color:var(--fg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
+nav.tabs button[aria-selected="true"] svg{background:var(--accent);color:var(--accent-fg)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* subapartado (Ingreso de mercadería): sangrado, con una línea que lo une a Inventario */
+nav.tabs button.tab-sub{position:relative;min-height:42px;margin:0 0 4px 22px;padding:4px 8px 4px 10px;gap:9px;font-size:14px;font-weight:600}
+nav.tabs button.tab-sub::before{content:"";position:absolute;left:-10px;top:-6px;bottom:50%;width:10px;border-left:2px solid var(--line);border-bottom:2px solid var(--line);border-bottom-left-radius:8px}
+nav.tabs button.tab-sub svg{width:16px;height:16px;padding:6px;border-radius:8px}
+nav.tabs button.tab-sub[aria-selected="true"]::before{border-color:var(--accent)}
+@media (min-width:900px){nav.tabs button.tab-sub{padding-left:10px;font-size:14px;gap:9px}}
+@media (max-width:899px){
+  header.top{width:100%}
+  header.top .wrap{overflow:visible;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(6px,env(safe-area-inset-left,0px));gap:12px}
+  main.wrap{width:100%;margin-left:0}
+  header.top .mobile-drawer{width:min(300px,86vw)}
+  nav.tabs button{height:auto;min-height:52px;padding:6px 10px;font-size:15.5px;border-left:0}
+  nav.tabs button.tab-sub{height:auto;min-height:46px;padding-left:12px;font-size:14.5px}
+}

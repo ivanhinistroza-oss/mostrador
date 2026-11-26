@@ -208,7 +208,7 @@ function varRowHtml(p, st, chip) {
 }
 // Cuadro talla × color con el stock de cada combinación; si las variantes no forman un cuadro, una lista
 function varDetailHtml(p) {
-  const vs = p.variantes, edit = puede("stock.ajustar");
+  const vs = p.variantes, edit = false; // el stock solo cambia con Ingreso de mercadería o con las ventas
   const state = v => { const n = n2(v.stock); return n <= 0 ? "out" : n <= n2(v.minimo ?? p.minimo) ? "low" : ""; };
   const label = v => [v.talla, v.color].filter(Boolean).join(" / ") || "Variante";
   const allT = vs.every(v => v.talla), noT = vs.every(v => !v.talla), allC = vs.every(v => v.color), noC = vs.every(v => !v.color);
@@ -241,8 +241,8 @@ function rowHtml(p) {
   const st = totalStock(p), mn = n2(p.minimo);
   const chip = st <= 0 ? `<span class="chip out">Agotado</span>` : st <= mn ? `<span class="chip low">Reponer</span>` : "";
   if (p.variantes && p.variantes.length) return varRowHtml(p, st, chip);
-  // en la computadora se ve el contador; en el celular, un número que se toca para abrir el contador
-  const edita = puede("stock.ajustar"), abierto = openStk.has(p.id), cls = st <= 0 ? "out" : st <= mn ? "low" : "";
+  // el stock se muestra fijo: se suma con Ingreso de mercadería y se descuenta con las ventas
+  const edita = false, abierto = openStk.has(p.id), cls = st <= 0 ? "out" : st <= mn ? "low" : "";
   const pill = `<b>${qty(st)}</b> ${esc(p.unidad || "und")}`;
   return `<div class="row ${edita ? "stk-edita" : ""} ${abierto ? "stk-abierto" : ""}" data-id="${esc(p.id)}">
     ${nameHtml(p, `<button data-edit="${esc(p.id)}">${esc(p.nombre)}</button>
