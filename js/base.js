@@ -54,7 +54,7 @@ function similarity(a, b) {
 const textoCache = new WeakMap();
 const ordenEs = new Intl.Collator("es");
 function productoTexto(p) {
-  const crudo = [p.nombre, p.categoria, p.codigo, ...(p.variantes || []).flatMap(v => [v.talla, v.color, v.codigo])].join(" ");
+  const crudo = [p.nombre, p.categoria, p.marca, p.codigo, ...(p.variantes || []).flatMap(v => [v.talla, v.color, v.codigo])].join(" ");
   const guardado = textoCache.get(p);
   if (guardado && guardado.crudo === crudo) return guardado.texto;
   const texto = norm(crudo);

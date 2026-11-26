@@ -1174,3 +1174,4 @@ nav.tabs button.tab-sub[aria-selected="true"]::before{border-color:var(--accent)
   nav.tabs button{height:auto;min-height:52px;padding:6px 10px;font-size:15.5px;border-left:0}
   nav.tabs button.tab-sub{height:auto;min-height:46px;padding-left:12px;font-size:14.5px}
 }
+#v-inventario .meta .marca{font-weight:600;color:var(--fg)}

@@ -46,6 +46,7 @@ function openProduct(id) {
   $("#pformTitle").textContent = editing ? "Editar producto" : "Nuevo producto";
   $("#p-nombre").value = editing ? editing.nombre : "";
   $("#p-categoria").value = editing ? editing.categoria || "" : "";
+  $("#p-marca").value = editing ? editing.marca || "" : "";
   $("#p-codigo").value = editing ? editing.codigo || "" : "";
   codigoVista();
   $("#p-precio").value = editing ? n2(editing.precio) : "";
@@ -65,6 +66,7 @@ function openProduct(id) {
   const del = $("#p-del"); del.hidden = !editing; del.classList.remove("armed"); del.textContent = "Eliminar";
   catTodas = false;
   renderCatChips();
+  renderMarcaChips();
   showSimilar();
   dlg.showModal();
   setTimeout(() => $("#p-nombre").focus(), 30);
@@ -201,6 +203,7 @@ document.getElementById("pform").addEventListener("click", e => {
   if (b.dataset.tallaset) { pick.set = b.dataset.tallaset; return renderPick(); }
   if ("pickMore" in b.dataset) { pick.masColores = !pick.masColores; return renderPick(); }
   if ("catMore" in b.dataset) { catTodas = !catTodas; return renderCatChips(); }
+  if (b.dataset.marca !== undefined) { $("#p-marca").value = b.dataset.marca; return renderMarcaChips(); }
   if (b.dataset.cat !== undefined) {
     $("#p-categoria").value = b.dataset.cat;
     showSimilar(); return renderCatChips();
@@ -266,11 +269,11 @@ $("#p-categoria").addEventListener("input", showSimilar);
 $("#p-categoria").addEventListener("input", renderCatChips);
 // Categorías que ya se usan, para elegir tocando. Las que solo cambian en mayúsculas o tildes
 // («colchones», «Colchones») cuentan como una, con la escritura más usada.
-function categoriasUsadas(exceptoId) {
+function categoriasUsadas(exceptoId, campo = "categoria") {
   const m = new Map();
   S.products.forEach(p => {
     if (p.id === exceptoId) return;
-    const c = (p.categoria || "").trim(); if (!c) return;
+    const c = (p[campo] || "").trim(); if (!c) return;
     const k = norm(c), e = m.get(k) || { n: 0, formas: new Map() };
     e.n++; e.formas.set(c, (e.formas.get(c) || 0) + 1); m.set(k, e);
   });
@@ -283,6 +286,22 @@ function categoriaCanonica(texto) {
   const k = norm(texto), c = k && categoriasUsadas(editing && editing.id).find(x => x.k === k);
   return c ? c.nombre : texto.trim();
 }
+// Marcas: igual que las categorías, se eligen tocando y se guardan con la escritura que ya existe
+function marcaCanonica(texto) {
+  const k = norm(texto), c = k && categoriasUsadas(editing && editing.id, "marca").find(x => x.k === k);
+  return c ? c.nombre : texto.trim();
+}
+function renderMarcaChips() {
+  const box = $("#p-marcas"), escrito = norm($("#p-marca").value), todas = categoriasUsadas(undefined, "marca");
+  const elegida = todas.find(c => c.k === escrito);
+  const filtradas = escrito && !elegida ? todas.filter(c => c.k.includes(escrito)) : todas;
+  let lista = filtradas.slice(0, 12);
+  if (elegida && !lista.includes(elegida)) lista = [elegida, ...lista];
+  box.hidden = !lista.length;
+  box.innerHTML = `<span class="cat-chips-label">${escrito && !elegida ? "Parecidas que ya usas" : "Tus marcas"}</span>
+    <div class="pick-chips">${lista.map(c => `<button type="button" data-marca="${esc(c.nombre)}" aria-pressed="${c === elegida}" title="${c.n} producto${c.n === 1 ? "" : "s"}">${esc(c.nombre)} <span class="n">${c.n}</span></button>`).join("")}</div>`;
+}
+$("#p-marca").addEventListener("input", renderMarcaChips);
 const CAT_VISIBLES = 10;
 let catTodas = false;
 function renderCatChips() {
@@ -354,6 +373,7 @@ $("#pform").addEventListener("submit", async e => {
   if(variants.length){p.variantes=variants;p.stock=variants.reduce((a,v)=>a+n2(v.stock),0);}else delete p.variantes;
   const choque = conflictoCodigo(p, editing);
   if (choque) { const er = $("#p-err"); er.textContent = choque; er.hidden = false; return; }
+  { const marca = marcaCanonica($("#p-marca").value); if (marca) p.marca = marca; else delete p.marca; }
   if ($("#p-costo").value !== "") p.costo = n2($("#p-costo").value); else delete p.costo;
   if (editFoto) p.foto = editFoto; else delete p.foto;
   fotoLista = null;

@@ -91,8 +91,9 @@ function renderInventario() {
   if (S.group === "semejanza" && !semejanzaGrande) groups = clusters(list);
   else {
     const m = new Map();
-    list.forEach(p => { const k = (p.categoria || "").trim() || "Sin categoría"; if (!m.has(k)) m.set(k, []); m.get(k).push(p); });
-    groups = [...m.entries()].sort((a, b) => a[0] === "Sin categoría" ? 1 : b[0] === "Sin categoría" ? -1 : ordenEs.compare(a[0], b[0]))
+    const porMarca = S.group === "marca", sin = porMarca ? "Sin marca" : "Sin categoría";
+    list.forEach(p => { const k = ((porMarca ? p.marca : p.categoria) || "").trim() || sin; if (!m.has(k)) m.set(k, []); m.get(k).push(p); });
+    groups = [...m.entries()].sort((a, b) => a[0] === sin ? 1 : b[0] === sin ? -1 : ordenEs.compare(a[0], b[0]))
       .map(([label, items]) => ({ label, items: items.sort((a, b) => ordenEs.compare(a.nombre, b.nombre)) }));
   }
   // solo se dibuja una parte: es lo que mantiene rápida la pantalla con catálogos grandes
@@ -121,10 +122,11 @@ function renderInventario() {
       <button type="button" class="${low ? "warn" : ""}" id="lowOnly" aria-pressed="${S.lowOnly}"><span>Por reponer</span><b>${low}</b><small>${S.lowOnly ? "Viendo solo estos · ver todos" : "Toca para ver solo estos"}</small></button>
     </div>
     <div class="toolbar inv-tools">
-      <input class="grow" type="search" id="invSearch" placeholder="Buscar por nombre, categoría o código" value="${esc(S.q)}">
+      <input class="grow" type="search" id="invSearch" placeholder="Buscar por nombre, categoría, marca o código" value="${esc(S.q)}">
       <button class="btn" id="invScan"><svg class="bc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>Escanear</button>
       <div class="seg" role="group" aria-label="Agrupar">
         <button data-group="categoria" aria-pressed="${S.group === "categoria"}">Por categoría</button>
+        <button data-group="marca" aria-pressed="${S.group === "marca"}">Por marca</button>
         <button data-group="semejanza" aria-pressed="${S.group === "semejanza"}">Por semejanza</button>
       </div>
     </div>
@@ -199,7 +201,7 @@ function varRowHtml(p, st, chip) {
   const prices = vs.map(v => n2(v.precio ?? p.precio)), lo = Math.min(...prices), hi = Math.max(...prices);
   return `<div class="row var-row" data-id="${esc(p.id)}">
     ${nameHtml(p, `<button data-edit="${esc(p.id)}">${esc(p.nombre)}</button>
-      <div class="meta">${S.group === "semejanza" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}<span>${vs.length} ${vs.length === 1 ? "variante" : "variantes"}</span></div>${colorTotalsHtml(p)}`)}
+      <div class="meta">${S.group !== "categoria" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${S.group !== "marca" && p.marca ? `<span class="marca">${esc(p.marca)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}<span>${vs.length} ${vs.length === 1 ? "variante" : "variantes"}</span></div>${colorTotalsHtml(p)}`)}
     <div class="price">${lo === hi ? money(lo) : `<span style="white-space:nowrap">${money(lo)} –</span> <span style="white-space:nowrap">${money(hi)}</span>`}</div>
     <button class="var-toggle ${st <= 0 ? "out" : bajas ? "low" : ""}" data-vtoggle="${esc(p.id)}" aria-expanded="${open}" aria-label="Ver stock por talla y color de ${esc(p.nombre)}"><b>${qty(st)}</b><span class="muted">${esc(p.unidad || "und")} · ${open ? "ocultar" : "tallas"}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="estado">${chip}</div>
@@ -246,7 +248,7 @@ function rowHtml(p) {
   const pill = `<b>${qty(st)}</b> ${esc(p.unidad || "und")}`;
   return `<div class="row ${edita ? "stk-edita" : ""} ${abierto ? "stk-abierto" : ""}" data-id="${esc(p.id)}">
     ${nameHtml(p, `<button data-edit="${esc(p.id)}">${esc(p.nombre)}</button>
-      <div class="meta">${S.group === "semejanza" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}${mn ? `<span>mín. ${qty(mn)}</span>` : ""}${p.ejemplo ? `<span class="chip ex">Ejemplo</span>` : ""}</div>`)}
+      <div class="meta">${S.group !== "categoria" && p.categoria ? `<span>${esc(p.categoria)}</span>` : ""}${S.group !== "marca" && p.marca ? `<span class="marca">${esc(p.marca)}</span>` : ""}${p.codigo ? `<span class="num">${esc(p.codigo)}</span>` : ""}${mn ? `<span>mín. ${qty(mn)}</span>` : ""}${p.ejemplo ? `<span class="chip ex">Ejemplo</span>` : ""}</div>`)}
     <div class="price">${money(p.precio)}</div>
     ${edita ? `<button type="button" class="stk-pill ${cls}" data-stkopen="${esc(p.id)}" aria-expanded="${abierto}" aria-label="Cambiar el stock de ${esc(p.nombre)}">${pill}</button>
     <div class="counter">
